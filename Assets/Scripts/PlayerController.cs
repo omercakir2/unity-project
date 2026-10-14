@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField, Range(0.02f, 0.3f)] private float rotationSmoothTime = 0.08f;
-    [SerializeField] private float gravity = -25f;
+    [SerializeField] private float gravity = -40f;
 
     [Header("References")]
     [SerializeField, Tooltip("Main Camera Transform (auto-assigned if not set)")]
@@ -38,6 +38,10 @@ public class PlayerController : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+            if (animator != null)
+                Debug.Log("[PlayerController] Animator automatically found on child: " + animator.gameObject.name);
+            else
+                Debug.LogError("[PlayerController] Animator could NOT be found on any child object!");
         }
 
         if (cameraTransform == null)
@@ -72,6 +76,12 @@ public class PlayerController : MonoBehaviour
         HandleMovement();
         HandleGravity();
         HandleAnimation();
+
+        // DEBUG - Remove after fixing
+        if (Time.frameCount % 30 == 0)
+        {
+            Debug.Log($"[DEBUG] Grounded: {controller.isGrounded} | Velocity Y: {velocity.y:F2} | Position Y: {transform.position.y:F2}");
+        }
     }
 
     private void HandleMovement()
@@ -122,11 +132,20 @@ public class PlayerController : MonoBehaviour
         {
             velocity.y = -2f;
         }
+        else
+        {
+            velocity.y += gravity * Time.deltaTime;
+        }
 
-        velocity.y += gravity * Time.deltaTime;
-
-        // Combine horizontal movement (in velocity.xz) with vertical and apply in one call
+        // Apply movement (horizontal from HandleMovement + vertical gravity)
         controller.Move(velocity * Time.deltaTime);
+
+        // Reset horizontal velocity after move (prevents sliding)
+        if (controller.isGrounded)
+        {
+            velocity.x = 0f;
+            velocity.z = 0f;
+        }
     }
 
     private void HandleAnimation()
