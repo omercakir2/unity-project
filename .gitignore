@@ -30,3 +30,7 @@ Thumbs.db
 # Other
 *.log
 *.pid
+
+# Editor files
+.vscode/
+*.slnx
