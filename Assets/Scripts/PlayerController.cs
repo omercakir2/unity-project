@@ -76,12 +76,6 @@ public class PlayerController : MonoBehaviour
         HandleMovement();
         HandleGravity();
         HandleAnimation();
-
-        // DEBUG - Remove after fixing
-        if (Time.frameCount % 30 == 0)
-        {
-            Debug.Log($"[DEBUG] Grounded: {controller.isGrounded} | Velocity Y: {velocity.y:F2} | Position Y: {transform.position.y:F2}");
-        }
     }
 
     private void HandleMovement()
