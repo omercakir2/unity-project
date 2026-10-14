@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 public class ThirdPersonCamera : MonoBehaviour
 {
     [Header("Target")]
-    [Tooltip("Assign the CameraTarget child of the Player")]
-    public Transform target;
+    [Tooltip("The CameraTarget child object inside the Player prefab")]
+    [SerializeField] private Transform target;
 
     [Header("Camera Settings")]
     [Tooltip("Distance from the target")]
@@ -31,8 +31,25 @@ public class ThirdPersonCamera : MonoBehaviour
     {
         if (target == null)
         {
-            Debug.LogError("ThirdPersonCamera: Target is not assigned!");
-            return;
+            // Auto-find CameraTarget inside Player
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                target = player.transform.Find("CameraTarget");
+            }
+
+            if (target == null)
+            {
+                target = FindAnyObjectByType<PlayerController>()?.transform.Find("CameraTarget");
+            }
+
+            if (target == null)
+            {
+                Debug.LogWarning("ThirdPersonCamera: Could not find CameraTarget automatically. Please assign it manually.");
+                return;
+            }
+
+            Debug.Log("ThirdPersonCamera: Target automatically assigned -> " + target.name);
         }
 
         // Initial position behind the player
