@@ -8,10 +8,10 @@ public class ThirdPersonCamera : MonoBehaviour
     [SerializeField] private Transform target;
 
     [Header("Camera Settings")]
-    [Tooltip("Distance from the target")]
-    public float distance = 5f;
+    [Tooltip("Distance from the target (increased for forest view and idle comfort)")]
+    public float distance = 8.5f;  // Larger default so camera isn't too close when idle
     [Tooltip("Height offset from target")]
-    public float height = 2f;
+    public float height = 4f;
     [Tooltip("How sensitive the mouse rotation is")]
     public float rotationSpeed = 120f;
     [Tooltip("Minimum vertical angle (down)")]
@@ -22,8 +22,14 @@ public class ThirdPersonCamera : MonoBehaviour
     [Header("Smoothing")]
     public float smoothTime = 0.12f;
 
+    [Header("Collision")]
+    [Tooltip("Radius for camera collision spherecast (prevents clipping into trees/terrain)")]
+    public float collisionRadius = 0.35f;
+    [Tooltip("Layers to treat as obstacles for camera (default = everything)")]
+    public LayerMask collisionMask = -1;
+
     private float currentYaw = 0f;
-    private float currentPitch = 20f;
+    private float currentPitch = 25f; // Slightly higher default for better forest overview
     private Vector3 currentVelocity = Vector3.zero;
     private Vector2 lookInput;
 
@@ -74,6 +80,16 @@ public class ThirdPersonCamera : MonoBehaviour
         Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
         Vector3 desiredPosition = target.position + rotation * new Vector3(0, height, -distance);
 
+        // Camera collision avoidance (critical for forest with many trees)
+        RaycastHit hit;
+        Vector3 direction = (desiredPosition - target.position).normalized;
+        float targetDistance = distance;
+        if (Physics.SphereCast(target.position + Vector3.up * 0.5f, collisionRadius, direction, out hit, distance, collisionMask, QueryTriggerInteraction.Ignore))
+        {
+            targetDistance = hit.distance - 0.2f; // Pull camera in
+            desiredPosition = target.position + direction * targetDistance;
+        }
+
         // Smooth movement
         transform.position = Vector3.SmoothDamp(
             transform.position, 
@@ -82,8 +98,8 @@ public class ThirdPersonCamera : MonoBehaviour
             smoothTime
         );
 
-        // Always look at target
-        transform.LookAt(target.position + Vector3.up * 1.2f);
+        // Always look at target (slightly above for better framing)
+        transform.LookAt(target.position + Vector3.up * 1.5f);
     }
 
     // Optional: Lock cursor when right mouse is held (you can call this from PlayerInput)
