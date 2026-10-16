@@ -58,7 +58,10 @@ public class PlayerController : MonoBehaviour
         {
             animator = GetComponentInChildren<Animator>();
             if (animator != null)
+            {
+                animator.applyRootMotion = false;
                 Debug.Log("[PlayerController] Animator automatically found on child: " + animator.gameObject.name);
+            }
             else
                 Debug.LogError("[PlayerController] Animator could NOT be found on any child object!");
         }

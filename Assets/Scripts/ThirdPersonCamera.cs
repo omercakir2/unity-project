@@ -32,6 +32,7 @@ public class ThirdPersonCamera : MonoBehaviour
     private float currentPitch = 25f; // Slightly higher default for better forest overview
     private Vector3 currentVelocity = Vector3.zero;
     private Vector2 lookInput;
+    private InputAction lookAction;
 
     private void Start()
     {
@@ -58,6 +59,20 @@ public class ThirdPersonCamera : MonoBehaviour
             Debug.Log("ThirdPersonCamera: Target automatically assigned -> " + target.name);
         }
 
+        // Robust input setup (works even if PlayerInput event wiring differs between scenes)
+        if (lookAction == null)
+        {
+            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
+            if (playerInput != null)
+            {
+                lookAction = playerInput.actions.FindAction("Look");
+                if (lookAction != null)
+                {
+                    Debug.Log("[ThirdPersonCamera] Look action connected automatically from PlayerInput.");
+                }
+            }
+        }
+
         // Initial position behind the player
         currentYaw = target.eulerAngles.y;
     }
@@ -70,6 +85,12 @@ public class ThirdPersonCamera : MonoBehaviour
     private void LateUpdate()
     {
         if (target == null) return;
+
+        // Read look input directly from action (robust against wiring differences in Demo_01 vs Demo_01_Night)
+        if (lookAction != null)
+        {
+            lookInput = lookAction.ReadValue<Vector2>();
+        }
 
         // Apply mouse rotation
         currentYaw += lookInput.x * rotationSpeed * Time.deltaTime;
