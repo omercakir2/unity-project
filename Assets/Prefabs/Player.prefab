@@ -151,7 +151,7 @@ MonoBehaviour:
     m_ActionName: 'Player/Sprint[/Keyboard/shift]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3909286917101264476, guid: 18ccff99913af41faad3e4459504e332, type: 3}
         m_TargetAssemblyTypeName: ThirdPersonCamera, Assembly-CSharp
         m_MethodName: OnLook
         m_Mode: 0
@@ -165,6 +165,26 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: dd7f5ff2-2e5e-47e5-b1ae-1ccf6a048fb5
     m_ActionName: 'Player/Look[/Mouse/delta]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8716172007719513468}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: OnJump
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: f47ac10b-58cc-4372-a567-0e02b2c3d479
+    m_ActionName: 'Player/Jump[/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6e7f8a9b-0c1d-4e2f-9a3b-4c5d6e7f8a9b
+    m_ActionName: 'Player/Interact[/Keyboard/e]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -185,9 +205,11 @@ MonoBehaviour:
   walkSpeed: 5
   sprintSpeed: 8
   rotationSmoothTime: 0.08
+  jumpHeight: 2.5
   gravity: -25
   cameraTransform: {fileID: 0}
   animator: {fileID: 5744465843702091773}
+  controller: {fileID: 0}
 --- !u!1001 &995315684481462840
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -280,7 +302,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2b201de69fd1d42dd9206dad61045ab2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.33
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2b201de69fd1d42dd9206dad61045ab2, type: 3}
       propertyPath: m_LocalRotation.w
