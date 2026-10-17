@@ -151,9 +151,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonCamera
   target: {fileID: 0}
-  distance: 5
-  height: 2
-  rotationSpeed: 120
-  minVerticalAngle: -30
-  maxVerticalAngle: 60
-  smoothTime: 0.12
+  distance: 3
+  height: 4.5
+  rotationSpeed: 25
+  minVerticalAngle: -65
+  maxVerticalAngle: 70
+  smoothTime: 0.15
+  collisionRadius: 0.4
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295

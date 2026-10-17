@@ -24,7 +24,7 @@ public class ProceduralTerrainGenerator
             terrain.terrainData = tData;
         }
 
-        // 250x250x250 as explicitly requested - matches Free Low Poly Nature Forest pack's 250x250 terrain map
+        // 250x250x250 size matches the Free Low Poly Nature Pack demo terrain
         tData.size = new Vector3(250f, 250f, 250f);
         tData.heightmapResolution = 257;
         tData.baseMapResolution = 512;
@@ -32,10 +32,13 @@ public class ProceduralTerrainGenerator
 
         GenerateNaturalHeightmap(tData);
 
-        // Simple material setup using existing GroundMaterial for meadow/lake/rock look from the pack
+        // Use material from Pure Poly pack for consistent low-poly meadow/lake/rock look
         if (terrain.materialTemplate == null)
         {
-            Material groundMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/GroundMaterial.mat");
+            Material groundMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Models/Pure Poly/Free Low Poly Nature Pack/Materials/PP_Ground.mat");
+            if (groundMat == null)
+                groundMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/GroundMaterial.mat");
             if (groundMat != null)
                 terrain.materialTemplate = groundMat;
         }
@@ -53,10 +56,10 @@ public class ProceduralTerrainGenerator
             mainCam.transform.LookAt(new Vector3(130f, 35f, 130f));
         }
 
-        Debug.Log("✅ Fully rewritten: 250x250x250 low-poly forest terrain generated for **Free Low Poly Nature Forest** pack.\n" +
-                  "• Heightmap with natural meadows, hills, ridges and mountain areas (v3.0 style).\n" +
-                  "• Ready for the pack's Terrain Tiles (Meadow, Lake), Trees (Birch, Fir), Flowers, Grass, Rocks, Mushrooms, Pebbles, Bridges and Fences.\n" +
-                  "Next step: Run Tools > Populate with Free Low Poly Nature Forest.");
+        Debug.Log("✅ 250x250x250 low-poly forest terrain generated for **Free Low Poly Nature Pack** (Pure Poly).\n" +
+                  "• Natural heightmap with meadows, hills, ridges, and mountain peaks.\n" +
+                  "• Configured for Pure Poly prefabs: Birch/Tree variants, grass, flowers, mushrooms, rocks, bridges, fences, and ground tiles.\n" +
+                  "Next step: Run Tools > Populate with Pure Poly Nature Pack.");
 
         EditorUtility.SetDirty(tData);
         AssetDatabase.SaveAssets();

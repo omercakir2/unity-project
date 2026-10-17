@@ -9,7 +9,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     [Header("Camera Settings")]
     [Tooltip("Distance from the target (increased for forest view and idle comfort)")]
-    public float distance = 8.5f;  // Larger default so camera isn't too close when idle
+    public float distance = 8.5f;  
     [Tooltip("Height offset from target")]
     public float height = 4f;
     [Tooltip("How sensitive the mouse rotation is")]
@@ -29,8 +29,8 @@ public class ThirdPersonCamera : MonoBehaviour
     public LayerMask collisionMask = -1;
 
     private float currentYaw = 0f;
-    private float currentPitch = 25f; // Slightly higher default for better forest overview
-    private Vector3 currentVelocity = Vector3.zero;
+    private float currentPitch = 25f; 
+    private Vector3 currentVelocity = Vector3.zero; // Veya Vector3.zero
     private Vector2 lookInput;
     private InputAction lookAction;
 
@@ -38,7 +38,6 @@ public class ThirdPersonCamera : MonoBehaviour
     {
         if (target == null)
         {
-            // Auto-find CameraTarget inside Player
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
@@ -55,26 +54,23 @@ public class ThirdPersonCamera : MonoBehaviour
                 Debug.LogWarning("ThirdPersonCamera: Could not find CameraTarget automatically. Please assign it manually.");
                 return;
             }
-
-            Debug.Log("ThirdPersonCamera: Target automatically assigned -> " + target.name);
         }
 
-        // Robust input setup (works even if PlayerInput event wiring differs between scenes)
-        if (lookAction == null)
+        // Look aksiyonunu güvenli bir şekilde bulma
+        PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
+        if (playerInput != null)
         {
-            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
-            if (playerInput != null)
-            {
-                lookAction = playerInput.actions.FindAction("Look");
-                if (lookAction != null)
-                {
-                    Debug.Log("[ThirdPersonCamera] Look action connected automatically from PlayerInput.");
-                }
-            }
+            lookAction = playerInput.actions.FindAction("Look");
         }
 
-        // Initial position behind the player
-        currentYaw = target.eulerAngles.y;
+        if (target != null)
+        {
+            currentYaw = target.eulerAngles.y;
+        }
+
+        // Fareyi kilitleyelim
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public void OnLook(InputAction.CallbackContext context)
@@ -86,49 +82,56 @@ public class ThirdPersonCamera : MonoBehaviour
     {
         if (target == null) return;
 
-        // Read look input directly from action (robust against wiring differences in Demo_01 vs Demo_01_Night)
+        // Input System Action Map kullanılıyorsa buradan da okunabilir
         if (lookAction != null)
         {
             lookInput = lookAction.ReadValue<Vector2>();
         }
 
-        // Apply mouse rotation
-        currentYaw += lookInput.x * rotationSpeed * Time.deltaTime;
-        currentPitch -= lookInput.y * rotationSpeed * Time.deltaTime;
+        // Fare hareketini uygula (Hassasiyet için Time.deltaTime kullanılabilir veya bağımsız tutulabilir)
+        currentYaw += lookInput.x * rotationSpeed * 0.02f; // Mouse delta değerleri genelde deltaTime gerektirmez ama hassasiyete göre ayarlanabilir
+        currentPitch -= lookInput.y * rotationSpeed * 0.02f;
         currentPitch = Mathf.Clamp(currentPitch, minVerticalAngle, maxVerticalAngle);
 
-        // Calculate desired camera position
-        Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
-        Vector3 desiredPosition = target.position + rotation * new Vector3(0, height, -distance);
+        // Fare girdisini işledikten hemen sonra sıfırlıyoruz ki durduğunda kamera kaymasın
+        // (Eğer OnLook kullanıyorsanız ve bu satır girdiyi kesiyorsa silebilirsiniz, ancak Update tabanlı okuma için önemlidir)
+        // lookInput = Vector2.zero; 
 
-        // Camera collision avoidance (critical for forest with many trees)
-        RaycastHit hit;
-        Vector3 direction = (desiredPosition - target.position).normalized;
+        // Hedef rotasyon ve pozisyon
+        Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
+        Vector3 targetFocusPosition = target.position + Vector3.up * height;
+        
+        // Kamera ideal pozisyonu
+        Vector3 desiredPosition = targetFocusPosition - (rotation * Vector3.forward * distance);
+
+        // Kamera Çarpışma Kontrolü (Camera Collision)
         float targetDistance = distance;
-        if (Physics.SphereCast(target.position + Vector3.up * 0.5f, collisionRadius, direction, out hit, distance, collisionMask, QueryTriggerInteraction.Ignore))
+        Vector3 directionToCamera = (desiredPosition - targetFocusPosition).normalized;
+
+        if (Physics.SphereCast(targetFocusPosition, collisionRadius, directionToCamera, out RaycastHit hit, distance, collisionMask, QueryTriggerInteraction.Ignore))
         {
-            targetDistance = hit.distance - 0.2f; // Pull camera in
-            desiredPosition = target.position + direction * targetDistance;
+            targetDistance = Mathf.Clamp(hit.distance - 0.2f, 0.5f, distance);
+            desiredPosition = targetFocusPosition + (directionToCamera * targetDistance);
         }
 
-        // Smooth movement
-        transform.position = Vector3.SmoothDamp(
-            transform.position, 
-            desiredPosition, 
-            ref currentVelocity, 
-            smoothTime
-        );
+        // Yumuşak geçiş (SmoothDamp)
+        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
 
-        // Always look at target (slightly above for better framing)
+        // Kameranın hedefe bakması
         transform.LookAt(target.position + Vector3.up * 1.5f);
     }
 
-    // Optional: Lock cursor when right mouse is held (you can call this from PlayerInput)
     public void OnMouseLookToggle(InputAction.CallbackContext context)
     {
         if (context.performed)
+        {
             Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
         else if (context.canceled)
+        {
             Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 }
