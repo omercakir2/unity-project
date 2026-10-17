@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project architecture — third-person character</title>
+<style>
+  :root {
+    --ink: #1c1915;
+    --muted: #5c564c;
+    --line: #ddd4c4;
+    --paper: #f6f1e7;
+    --card: #fffdf8;
+    --green: #1f6b4a;
+    --green-soft: #e5f2eb;
+    --amber: #8a4b12;
+    --amber-soft: #f8ead7;
+    --blue: #1d4e89;
+    --blue-soft: #e7f0f8;
+    --red: #8d2f2f;
+    --shadow: 0 1px 0 rgba(28, 25, 21, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--paper);
+    font: 17px/1.55 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  }
+  a { color: var(--green); }
+  code, .path {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+  }
+  code {
+    background: #efe7d8;
+    padding: 0.08em 0.35em;
+    border-radius: 4px;
+  }
+  header.top {
+    background: #1c1915;
+    color: #f6f1e7;
+    padding: 2.4rem 1.5rem 2rem;
+  }
+  header.top h1 {
+    margin: 0 0 0.4rem;
+    font-size: 2.1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  header.top p { margin: 0.2rem 0; max-width: 44rem; color: #e4d8c4; }
+  header.top .meta { margin-top: 1rem; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; color: #b7aa96; }
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.6rem 1.4rem 4rem;
+  }
+  nav {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+  nav a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.22rem 0;
+  }
+  nav a:hover { color: var(--ink); }
+  main h2 {
+    margin: 2.2rem 0 0.6rem;
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+  }
+  main h3 { margin: 1.4rem 0 0.4rem; font-size: 1.15rem; }
+  main p { margin: 0.55rem 0; }
+  .lead { font-size: 1.12rem; }
+  .card, .callout, table, .flow, .tree, .states {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .card { padding: 1rem 1.1rem; margin: 0.8rem 0; }
+  .callout { padding: 0.85rem 1rem; margin: 0.9rem 0; background: var(--amber-soft); border-color: #e4cba8; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.8rem;
+    margin: 0.8rem 0 1rem;
+  }
+  .grid .card h3 { margin-top: 0; }
+  .grid .card p { margin: 0.3rem 0 0; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1rem; overflow: hidden; }
+  th, td { text-align: left; padding: 0.55rem 0.75rem; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: #faf6ee; }
+  tr:last-child td { border-bottom: 0; }
+  .flow { padding: 1rem; margin: 0.8rem 0 1rem; overflow-x: auto; }
+  .flow svg { display: block; min-width: 640px; width: 100%; height: auto; }
+  .tree { padding: 1rem 1.15rem; margin: 0.8rem 0; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.55; white-space: pre; overflow-x: auto; }
+  .states { padding: 1rem; margin: 0.8rem 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
+  .pill {
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    border: 1px solid var(--line);
+    background: #fff;
+  }
+  .pill.locomotion { background: var(--blue-soft); border-color: #c5d7ea; }
+  .pill.action { background: var(--amber-soft); border-color: #e4cba8; }
+  .pill.stairs { background: var(--green-soft); border-color: #b7d8c6; }
+  .arrow { color: var(--muted); font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  ol.steps { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; }
+  ol.steps li { margin: 0.35rem 0; }
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.4rem 2.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { position: static; display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>How this project fits together</h1>
+  <p>A map for someone opening the Unity project for the first time. It covers the character, the camera, the animations, and the scenes those systems live in.</p>
+  <p class="meta">Unity 6000.6.5f1 · Universal Render Pipeline · Input System · open this file in a browser</p>
+</header>
+
+<div class="layout">
+<nav>
+  <a href="#shape">The shape</a>
+  <a href="#frame">One frame</a>
+  <a href="#folders">Folders</a>
+  <a href="#player">Player</a>
+  <a href="#input">Input</a>
+  <a href="#jump">Jump, climb, drop</a>
+  <a href="#stairs">Stairs</a>
+  <a href="#animator">Animator</a>
+  <a href="#camera">Camera</a>
+  <a href="#world">World and scenes</a>
+  <a href="#edit">Where to change things</a>
+  <a href="#team">Working together</a>
+</nav>
+
+<main>
+  <h2 id="shape">The shape</h2>
+  <p class="lead">This is a third-person character in a low-poly forest. The capsule moves. The mesh only poses. Root motion stays off, so animation never teleports the player.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>Playable character</h3>
+      <p><span class="path">Assets/Prefabs/Player.prefab</span> holds the controller, the input, and the Remy mesh.</p>
+    </div>
+    <div class="card">
+      <h3>Brain</h3>
+      <p><span class="path">PlayerController.cs</span> reads input, moves the capsule, and decides jump, climb, drop, or stairs.</p>
+    </div>
+    <div class="card">
+      <h3>Body</h3>
+      <p>The Animator on the Remy child plays Mixamo clips. <span class="path">MaleAnimator.controller</span> chooses which clip.</p>
+    </div>
+    <div class="card">
+      <h3>Eyes</h3>
+      <p><span class="path">ThirdPersonCamera.cs</span> orbits <span class="path">CameraTarget</span> and movement is relative to that view.</p>
+    </div>
+  </div>
+
+  <h2 id="frame">One frame</h2>
+  <p>Input arrives through the Input System. Movement happens in <code>Update</code>. Pose correction for climbs and stairs happens in <code>LateUpdate</code>, after the Animator has produced a pose. The camera runs in its own <code>LateUpdate</code> and follows the player.</p>
+  <div class="flow" aria-label="Frame loop">
+    <svg viewBox="0 0 760 168" role="img">
+      <title>From input to camera in one frame</title>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#5c564c"/>
+        </marker>
+      </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
+        <rect x="8" y="18" width="140" height="58" rx="10" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="78" y="42" text-anchor="middle">PlayerInput</text>
+        <text x="78" y="60" text-anchor="middle" fill="#5c564c" font-size="11">Move, Jump, Look</text>
+        <rect x="188" y="18" width="170" height="58" rx="10" fill="#fff" stroke="#ddd4c4"/>
+        <text x="273" y="42" text-anchor="middle">Update</text>
+        <text x="273" y="60" text-anchor="middle" fill="#5c564c" font-size="11">move, gravity, triggers</text>
+        <rect x="398" y="18" width="160" height="58" rx="10" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="478" y="42" text-anchor="middle">Animator</text>
+        <text x="478" y="60" text-anchor="middle" fill="#5c564c" font-size="11">pose on Remy</text>
+        <rect x="598" y="18" width="150" height="58" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="673" y="42" text-anchor="middle">LateUpdate</text>
+        <text x="673" y="60" text-anchor="middle" fill="#5c564c" font-size="11">climb warp, stair phase</text>
+        <rect x="250" y="108" width="250" height="46" rx="10" fill="#fff" stroke="#ddd4c4"/>
+        <text x="375" y="136" text-anchor="middle">ThirdPersonCamera follows CameraTarget</text>
+        <line x1="148" y1="47" x2="184" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
+        <line x1="358" y1="47" x2="394" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
+        <line x1="558" y1="47" x2="594" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
+      </g>
+    </svg>
+  </div>
+  <p><code>CharacterController.Move</code> is the only thing that changes the player's position during normal locomotion. Climb and jump-down turn the controller off and move the transform directly, then turn it back on when the action ends.</p>
+
+  <h2 id="folders">Folders</h2>
+  <div class="tree">Assets/
+  Scripts/                  runtime gameplay
+    PlayerController.cs     movement, jump, climb, stairs
+    StairFootIk.cs          sole-on-tread callback
+    ThirdPersonCamera.cs    orbit camera used in game
+    CameraFollow.cs         older follow script, not used by a scene
+    TorchFlicker.cs         night-scene flame
+  AnimatorControllers/
+    MaleAnimator.controller locomotion and traversal states
+  Input/
+    PlayerInputActions.inputactions
+  Prefabs/
+    Player.prefab
+    Main Camera.prefab
+    Torch.prefab
+  Models/
+    Characters/LowPolyMale/ male mesh, Remy mesh, Mixamo clips
+    Pure Poly/              forest pack used by the terrain tools
+    Forest/  Structures/    extra props
+  Scenes/
+    SampleScene.unity       stairs, climb box, ledge — the traversal test
+    Demo_01.unity           forest demo
+    Demo_01_Night.unity     same forest with a torch
+  Editor/                   menu tools, not in a build
+  Materials/  Settings/     URP materials and renderer assets
+ProjectSettings/            tags, physics, quality
+docs/architecture.html      this page</div>
+
+  <h2 id="player">Player</h2>
+  <p>The prefab root is the gameplay object. The visible person is a child.</p>
+  <table>
+    <thead><tr><th>Object</th><th>What is on it</th><th>Job</th></tr></thead>
+    <tbody>
+      <tr><td>Player</td><td><code>CharacterController</code>, <code>PlayerController</code>, <code>PlayerInput</code></td><td>Capsule, rules, and input binding</td></tr>
+      <tr><td>Remy</td><td><code>Animator</code> using MaleAnimator, humanoid, scale 0.5</td><td>The mesh. Local position is about <code>(0, -1.2, 0)</code> so the feet meet the capsule bottom.</td></tr>
+      <tr><td>CameraTarget</td><td>empty transform</td><td>The point the camera orbits. It is not the capsule center.</td></tr>
+      <tr><td>StairFootIk</td><td>added in <code>Awake</code> / <code>LateUpdate</code> if missing</td><td>Receives <code>OnAnimatorIK</code>. That callback only runs on the same object as the Animator, which is why it is a separate script.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">Root motion is forced off. If a new clip seems to slide the character, check <code>applyRootMotion</code> before changing speeds. The controller will fight a clip that also tries to move the transform.</div>
+  <p>Walk speed is 5 and sprint speed is 8, in meters per second. Gravity in the script defaults to -40. The prefab YAML still stores an older gravity of -25, and newer climb and stair fields are not written on the prefab yet, so those use the script defaults until Unity reserializes the prefab.</p>
+
+  <h2 id="input">Input</h2>
+  <p>Actions live in <span class="path">Assets/Input/PlayerInputActions.inputactions</span>, map name <code>Player</code>. The Player prefab's <code>PlayerInput</code> invokes Unity Events.</p>
+  <table>
+    <thead><tr><th>Action</th><th>Default</th><th>Method</th></tr></thead>
+    <tbody>
+      <tr><td>Move</td><td>WASD</td><td><code>PlayerController.OnMove</code></td></tr>
+      <tr><td>Sprint</td><td>Shift</td><td><code>PlayerController.OnSprint</code></td></tr>
+      <tr><td>Jump</td><td>Space</td><td><code>PlayerController.OnJump</code></td></tr>
+      <tr><td>Look</td><td>Mouse delta</td><td><code>ThirdPersonCamera.OnLook</code>. The camera also reads the Look action itself.</td></tr>
+      <tr><td>Interact</td><td>E</td><td><code>OnInteract</code> exists and logs. The prefab event is not wired, so E currently does nothing in play.</td></tr>
+    </tbody>
+  </table>
+  <p>Movement is camera-relative. The stick direction is rebuilt from the camera's flattened forward and right, then the body turns toward that direction.</p>
+
+  <h2 id="jump">Jump, climb, drop</h2>
+  <p>Space always calls <code>TryPerformJump</code>. The same button picks one of three actions, in this order. The character must be grounded, and must not already be inside a climb or a drop.</p>
+  <ol class="steps">
+    <li><strong>Climb.</strong> A low forward ray or spherecast hits something, a high ray misses, and the obstacle is roughly half the capsule height to a bit more. Stairs are rejected. A wide top, like the test cube, is a mantle onto that top. A thin obstacle looks for ground on the far side.</li>
+    <li><strong>Jump down.</strong> Used when there is no climb and the player is not on stairs. A drop in front must be between about 0.45 m and 2.1 m. SampleScene's <code>Ledge</code> is the test for this.</li>
+    <li><strong>Jump.</strong> Sets upward velocity from <code>jumpHeight</code> and fires the Jump trigger.</li>
+  </ol>
+  <p>Climb plays <em>Climb Over</em> (<span class="path">Remy@Braced Hang To Crouch.fbx</span>). During the action the controller is disabled. <code>LateUpdate</code> scrubs the clip on a real-time clock and moves the body so the fingertips stay on the near top edge. After about 62% of the clip, the target blends from that lip to a stand on the landing. On the way out, the animator is forced back to the Blend Tree and the capsule is shifted so the feet sit on the landing. Without that snap, the end pose leaves the mesh floating above the capsule.</p>
+  <p>Jump down plays <em>Jump Down</em> (<span class="path">Remy@Jumping Down.fbx</span>) and moves along a short arc to the landing point. It does not use the lip hold.</p>
+
+  <h2 id="stairs">Stairs</h2>
+  <p>A stair is any collider whose transform, or a parent, has the tag <code>Stairs</code>. Uphill is that object's forward, flattened onto the ground. In SampleScene the <code>Stairs</code> object faces +Z, so walking toward +Z is up. The <code>Ledge</code> object is separate and is not tagged, so it is a jump-down, not a stair.</p>
+  <p>Contact comes from two places: a walkable hit in <code>OnControllerColliderHit</code>, and a short downward ray from the feet every frame. A hit that is not a stair does not cancel the stair. The contact timer is 0.2 seconds, so a brief gap between treads does not switch the character back to flat-ground speed.</p>
+  <h3>Speed</h3>
+  <p>On stairs the horizontal speed is <code>2 × tread spacing / clip length</code>. Spacing is measured from the step renderers, and falls back to 0.35 m. The walk-up clip is about 1.2 s, the run-up clip about 0.6 s, and the descend clip about 0.93 s. For a two-plant clip, that is one tread per footfall at the clip's own pace.</p>
+  <p>Going down, vertical speed follows the slope: horizontal speed times riser / tread. That keeps the capsule on the steps instead of walking off a nose and free-falling. Going up, the controller's step offset (0.3 m) clears the 0.2 m risers, and fall speed is capped while the stair timer is active.</p>
+  <h3>Footfalls</h3>
+  <p>The first time a stair clip is needed, the controller samples it and remembers the frames where a foot is actually lowest. Walk up and run up each have two plants, half a cycle apart. Descend only has one plant that reaches the ground, so that clip is treated as one step per cycle and therefore plays faster than its authored length.</p>
+  <p>While the matching state is fully entered, <code>LateUpdate</code> sets animator speed to 0 and scrubs normalized time from the body's distance along the stair. The plant lands on a tread center. <code>StairFootIk</code> then lowers the sole onto the surface under that foot. It does not slide the foot sideways. The phase lock owns which tread. The IK owns contact with it.</p>
+  <div class="callout">SampleScene stairs are boxes: tread 0.35 m, riser 0.20 m, eight steps, then a landing. If you build a new stair, tag the parent <code>Stairs</code>, point its forward uphill, and keep the steps as child renderers between about 0.18 m and 0.8 m deep so the spacing measurement can see them.</div>
+
+  <h2 id="animator">Animator</h2>
+  <p><span class="path">Assets/AnimatorControllers/MaleAnimator.controller</span> has one base layer. IK Pass is on, which is required for <code>StairFootIk</code>.</p>
+  <div class="states">
+    <div class="row">
+      <span class="pill locomotion">Blend Tree</span>
+      <span class="arrow">Speed 0</span>
+      <span class="pill locomotion">Breathing Idle</span>
+      <span class="arrow">0.5</span>
+      <span class="pill locomotion">Walking</span>
+      <span class="arrow">1</span>
+      <span class="pill locomotion">Slow Run</span>
+    </div>
+    <p style="margin:0.8rem 0 0.3rem;color:#5c564c">Action states. They leave when the clip finishes. Climb and jump-down are also ended by the controller.</p>
+    <div class="row">
+      <span class="pill action">Jump</span>
+      <span class="pill action">Climb Over</span>
+      <span class="pill action">Jump Down</span>
+    </div>
+    <p style="margin:0.8rem 0 0.3rem;color:#5c564c">Stair states. Enter when <code>OnStairs</code> is set. Direction above zero is up. Sprint chooses the run clip only while going up.</p>
+    <div class="row">
+      <span class="pill stairs">Walk Up Stairs</span>
+      <span class="pill stairs">Run Up Stairs</span>
+      <span class="pill stairs">Descend Stairs</span>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Parameter</th><th>Set by</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>Speed</code></td><td><code>HandleAnimation</code></td><td>0 idle, 0.5 walk, 1 sprint. Damped, so the blend eases.</td></tr>
+      <tr><td><code>IsSprinting</code></td><td>same</td><td>True only while sprint is held and there is move input.</td></tr>
+      <tr><td><code>Jump</code> <code>Climb</code> <code>JumpDown</code></td><td>triggers from <code>TryPerformJump</code></td><td>One-shot entries into the action states.</td></tr>
+      <tr><td><code>OnStairs</code></td><td><code>HandleStairs</code></td><td>True while the stair contact timer is running.</td></tr>
+      <tr><td><code>StairDirection</code></td><td>same</td><td>1 uphill, -1 downhill, 0 if the move is across the stair. Compared with 0.35.</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <thead><tr><th>State</th><th>Clip file</th></tr></thead>
+    <tbody>
+      <tr><td>Idle / Walk / Run</td><td><span class="path">Male@Breathing Idle</span>, <span class="path">Male@Walking</span>, <span class="path">Male@Slow Run</span></td></tr>
+      <tr><td>Jump</td><td><span class="path">Male@Standing Jump</span></td></tr>
+      <tr><td>Climb Over</td><td><span class="path">Remy@Braced Hang To Crouch</span></td></tr>
+      <tr><td>Jump Down</td><td><span class="path">Remy@Jumping Down</span></td></tr>
+      <tr><td>Walk Up Stairs</td><td><span class="path">Remy@Walking Up The Stairs</span></td></tr>
+      <tr><td>Run Up Stairs</td><td><span class="path">Remy@Running Up Stairs</span></td></tr>
+      <tr><td>Descend Stairs</td><td><span class="path">Remy@Descending Stairs</span></td></tr>
+    </tbody>
+  </table>
+  <p>Clips sit in <span class="path">Assets/Models/Characters/LowPolyMale/Animations/</span>. They are humanoid and retargeted onto Remy. The Remy exports are large because the mesh is inside the FBX. The controller references the clip, not a separate animation asset.</p>
+  <p>On stairs the controller sets animator speed to 0 and calls <code>Play</code> with a normalized time. The state machine still decides <em>which</em> stair state. The script decides <em>where</em> inside that clip the pose is. If you turn animator speed back to 1 while phase lock is active, the feet will drift off the treads.</p>
+
+  <h2 id="camera">Camera</h2>
+  <p><span class="path">Assets/Prefabs/Main Camera.prefab</span> has <code>ThirdPersonCamera</code>. It finds a child named <code>CameraTarget</code> on the Player, orbits with the mouse, keeps a distance of about 8.5 m, and spherecasts so the camera does not pass through trees. Yaw 0 looks along +Z. Movement uses that same camera forward.</p>
+  <p><code>CameraFollow.cs</code> is an older damper that offsets from the target's own rotation. No scene or prefab references it. New camera work belongs in <code>ThirdPersonCamera</code>.</p>
+
+  <h2 id="world">World and scenes</h2>
+  <table>
+    <thead><tr><th>Scene</th><th>Use it for</th></tr></thead>
+    <tbody>
+      <tr><td><span class="path">Assets/Scenes/SampleScene.unity</span></td><td>The small gym. A ground plane, a cube for climb-over, a tagged <code>Stairs</code> run with a landing, and an untagged <code>Ledge</code> for jump-down. This is the scene the traversal code was tuned against.</td></tr>
+      <tr><td><span class="path">Assets/Scenes/Demo_01.unity</span></td><td>The forest walk. Terrain plus the Pure Poly nature scatter.</td></tr>
+      <tr><td><span class="path">Assets/Scenes/Demo_01_Night.unity</span></td><td>The night variant. The torch prefab is parented to the character.</td></tr>
+    </tbody>
+  </table>
+  <p>The forest is not built by a runtime spawner. Two editor menus create it and you save the scene:</p>
+  <ul>
+    <li><code>Tools/Generate Low Poly Forest Terrain (Free Pack)</code> in <span class="path">ProceduralTerrainGenerator.cs</span> builds a 250 m terrain into <span class="path">Assets/New Forest Terrain.asset</span>.</li>
+    <li><code>Tools/Populate with Pure Poly Nature Pack</code> in <span class="path">ForestPopulator.cs</span> scatters trees, grass, and props from <span class="path">Assets/Models/Pure Poly/Free Low Poly Nature Pack/Prefabs</span>.</li>
+    <li><code>Tools/Setup Player Torch (Night)</code> in <span class="path">CreateTorchAndAttach.cs</span> builds <span class="path">Assets/Prefabs/Torch.prefab</span>. <code>TorchFlicker</code> animates the light and particles.</li>
+  </ul>
+  <p>Rendering is URP. Player-facing settings are under <span class="path">Assets/Settings/</span> (<code>PC_RPAsset</code>, <code>Mobile_RPAsset</code>, volume profiles). There is no gameplay UI yet.</p>
+
+  <h2 id="edit">Where to change things</h2>
+  <table>
+    <thead><tr><th>You want to…</th><th>Open</th></tr></thead>
+    <tbody>
+      <tr><td>Change walk or sprint speed, jump height, climb reach</td><td><code>PlayerController</code> fields, then check the Player prefab so a serialized override is not winning.</td></tr>
+      <tr><td>Change which clip plays</td><td><span class="path">MaleAnimator.controller</span>. Keep the state names. The script looks up <code>Walk Up Stairs</code>, <code>Run Up Stairs</code>, <code>Descend Stairs</code>, <code>Climb Over</code>, and <code>Blend Tree</code> by those exact strings.</td></tr>
+      <tr><td>Add a stair</td><td>Parent the steps under one object, tag it <code>Stairs</code>, aim forward uphill. The tag list is in <span class="path">ProjectSettings/TagManager.asset</span>.</td></tr>
+      <tr><td>Retune foot-to-tread matching</td><td><code>BakeStairClip</code> and <code>PhaseForFeetOnTreads</code> choose the timing. <code>PlantStairFoot</code> only sets height.</td></tr>
+      <tr><td>Change camera distance or collision</td><td><code>ThirdPersonCamera</code> on the Main Camera prefab.</td></tr>
+      <tr><td>Add a button</td><td>Add the action in <span class="path">PlayerInputActions.inputactions</span>, then add a Unity Event on the Player's <code>PlayerInput</code>. Generating the C# wrapper is not how this prefab is wired.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="team">Working together</h2>
+  <ul>
+    <li>Save the scene after Inspector and Scene-view edits. Unsaved scene work disappears when Unity closes.</li>
+    <li>Do not edit <span class="path">SampleScene.unity</span> at the same time as someone else. Scene YAML merges badly.</li>
+    <li>Prefer prefab edits for the player and the camera. Keep the scene as placement.</li>
+    <li>Commit <span class="path">.meta</span> files with the assets they belong to. A missing meta breaks the animator references.</li>
+    <li><span class="path">Library/</span>, <span class="path">Logs/</span>, <span class="path">Temp/</span>, and <span class="path">UserSettings/</span> are local. Do not commit them.</li>
+  </ul>
+</main>
+</div>
+<footer>
+  Open <span class="path">docs/architecture.html</span> in a browser. When the player loop or the animator states change, update this page in the same change.
+</footer>
+</body>
+</html>

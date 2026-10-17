@@ -37,11 +37,15 @@ Third person character controller with camera-relative movement, sprint, and mou
 5. **Scripts**
    - All logic stays in `Assets/Scripts/`. These are easy to merge.
 
+## Architecture
+
+Open [docs/architecture.html](docs/architecture.html) in a browser. It maps the player, animations, camera, input, and scenes for someone new to the project.
+
 ## How to Run
-1. Open project in Unity 2022.3+
-2. Open `SampleScene`
-3. Play (WASD + Shift to sprint, Mouse to look)
+1. Open the project in Unity 6000.6.5f1
+2. Open `SampleScene` to try climb, stairs, and the ledge, or `Demo_01` for the forest
+3. Play (WASD, Shift to sprint, mouse to look, Space to jump)
 
 Made with ❤️ using Grok.
 
-Last updated: 2026-10-14
+Last updated: 2026-10-17
