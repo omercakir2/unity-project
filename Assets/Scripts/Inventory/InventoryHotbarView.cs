@@ -10,6 +10,7 @@ public class InventoryHotbarView : MonoBehaviour
 
     [SerializeField] private PlayerInventory inventory;
     [SerializeField] private SlotWidget[] slots;
+    [SerializeField] private GameObject crosshair;
 
     [Serializable]
     public class SlotWidget
@@ -17,15 +18,21 @@ public class InventoryHotbarView : MonoBehaviour
         [SerializeField] private UnityEngine.UI.Image background;
         [SerializeField] private UnityEngine.UI.Image highlight;
         [SerializeField] private GameObject torchGlyph;
+        [SerializeField] private GameObject searchlightGlyph;
 
-        public void Apply(bool occupied, bool showPreview, bool active)
+        public void Apply(bool occupied, string itemId, bool showPreview, bool active)
         {
             if (background != null)
                 background.color = occupied ? OccupiedBackground : EmptyBackground;
             if (highlight != null)
                 highlight.color = active ? ActiveBorder : IdleBorder;
-            if (torchGlyph != null && torchGlyph.activeSelf != showPreview)
-                torchGlyph.SetActive(showPreview);
+
+            bool showTorch = showPreview && itemId == PlayerInventory.TorchItemId;
+            bool showSearchlight = showPreview && itemId == PlayerInventory.SearchlightItemId;
+            if (torchGlyph != null && torchGlyph.activeSelf != showTorch)
+                torchGlyph.SetActive(showTorch);
+            if (searchlightGlyph != null && searchlightGlyph.activeSelf != showSearchlight)
+                searchlightGlyph.SetActive(showSearchlight);
         }
     }
 
@@ -63,8 +70,16 @@ public class InventoryHotbarView : MonoBehaviour
 
             InventorySlotState state = inventory.GetSlot(i);
             bool occupied = state != null && state.occupied;
-            bool showPreview = occupied && state.preview && state.item == PlayerInventory.TorchItemId;
-            slots[i].Apply(occupied, showPreview, inventory.ActiveSlot == i);
+            bool showPreview = occupied && state.preview;
+            string itemId = state != null ? state.item : null;
+            slots[i].Apply(occupied, itemId, showPreview, inventory.ActiveSlot == i);
+        }
+
+        if (crosshair != null)
+        {
+            bool showCrosshair = inventory.ActiveItemId == PlayerInventory.SearchlightItemId;
+            if (crosshair.activeSelf != showCrosshair)
+                crosshair.SetActive(showCrosshair);
         }
     }
 }

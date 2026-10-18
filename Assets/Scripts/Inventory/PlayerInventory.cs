@@ -15,6 +15,7 @@ public class PlayerInventory : MonoBehaviour
 {
     public const int MaxItems = 4;
     public const string TorchItemId = "torch";
+    public const string SearchlightItemId = "searchlight";
 
     [SerializeField] private int defaultMaxSlots = 4;
     [SerializeField] private int activeSlot;
@@ -78,6 +79,12 @@ public class PlayerInventory : MonoBehaviour
         slots[0].occupied = true;
         slots[0].item = TorchItemId;
         slots[0].preview = true;
+        if (count > 1)
+        {
+            slots[1].occupied = true;
+            slots[1].item = SearchlightItemId;
+            slots[1].preview = true;
+        }
         activeSlot = 0;
     }
 
