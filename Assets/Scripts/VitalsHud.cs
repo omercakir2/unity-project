@@ -81,11 +81,7 @@ public class VitalsHud : MonoBehaviour
         }
 
         if (label != null)
-        {
-            int shownCurrent = Mathf.CeilToInt(current);
-            int shownMax = Mathf.CeilToInt(max);
-            label.text = shownCurrent + "/" + shownMax;
-        }
+            label.text = Mathf.CeilToInt(current).ToString();
     }
 
     private static void EnsureEventSystem()

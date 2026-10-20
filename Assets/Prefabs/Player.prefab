@@ -732,8 +732,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 28f7a24d63c0c471cb0732b0017003d3, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1116,7 +1116,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 28f7a24d63c0c471cb0732b0017003d3, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1397,6 +1397,9 @@ MonoBehaviour:
   traversalMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  speedBlendStart: 0.22
+  speedBlendStop: 0.48
+  tiredBlend: 0.55
   cameraTransform: {fileID: 0}
   animator: {fileID: 0}
   controller: {fileID: 0}
@@ -1446,10 +1449,10 @@ MonoBehaviour:
   inventory: {fileID: 633443547184517301}
   torchPrefab: {fileID: 5140706436894621468, guid: df69640242f004a70a1a582ff05601c5, type: 3}
   searchlightPrefab: {fileID: 5823359753970736860, guid: e2e891528742b457288fabdf89be0ff6, type: 3}
-  torchLocalPosition: {x: -0.67, y: -0.45, z: 0.11}
-  torchLocalEuler: {x: 47.51, y: 223.53, z: 262.7}
-  searchlightLocalPosition: {x: 0.05, y: 0.12, z: 0}
-  searchlightLocalEuler: {x: 0, y: 0, z: 0}
+  torchLocalPosition: {x: 0.01, y: 0.27, z: 0.05}
+  torchLocalEuler: {x: 344.6, y: 82.2, z: 0}
+  searchlightLocalPosition: {x: 0.021, y: 0.118, z: 0.002}
+  searchlightLocalEuler: {x: 280.3, y: 85, z: 177.6}
 --- !u!114 &8415847964006251158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1781,7 +1784,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 100/100
+  m_text: 100
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1866,9 +1869,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
-  m_MinWidth: 120
+  m_MinWidth: 72
   m_MinHeight: -1
-  m_PreferredWidth: 120
+  m_PreferredWidth: 72
   m_PreferredHeight: -1
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
@@ -2494,7 +2497,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 100/100
+  m_text: 100
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2579,9 +2582,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
-  m_MinWidth: 120
+  m_MinWidth: 72
   m_MinHeight: -1
-  m_PreferredWidth: 120
+  m_PreferredWidth: 72
   m_PreferredHeight: -1
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
@@ -3761,8 +3764,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 28f7a24d63c0c471cb0732b0017003d3, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4733,7 +4736,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 28f7a24d63c0c471cb0732b0017003d3, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1

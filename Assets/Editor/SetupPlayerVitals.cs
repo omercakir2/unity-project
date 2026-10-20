@@ -9,6 +9,7 @@ public static class SetupPlayerVitals
     private const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
     private const string ControllerPath = "Assets/AnimatorControllers/MaleAnimator.controller";
     private const string FontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
+    private const string BarSpritePath = "Assets/UI/Bar.png";
 
     private static readonly Color TrackColor = new Color(0.08f, 0.08f, 0.08f, 0.72f);
     private static readonly Color HealthColor = new Color(0.35f, 0.75f, 0.4f, 1f);
@@ -239,6 +240,9 @@ public static class SetupPlayerVitals
         DestroyChild(canvas, "DeathPanel");
 
         Sprite panel = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        Sprite bar = AssetDatabase.LoadAssetAtPath<Sprite>(BarSpritePath);
+        if (bar == null)
+            bar = panel;
 
         GameObject vitalsRoot = CreateUiObject("Vitals", canvas);
         RectTransform vitalsRect = vitalsRoot.GetComponent<RectTransform>();
@@ -256,8 +260,8 @@ public static class SetupPlayerVitals
         column.childForceExpandWidth = true;
         column.childForceExpandHeight = false;
 
-        BarWidgets health = CreateBar(vitalsRoot.transform, "HealthRow", "Health", panel, font, HealthColor);
-        BarWidgets energy = CreateBar(vitalsRoot.transform, "EnergyRow", "Energy", panel, font, EnergyColor);
+        BarWidgets health = CreateBar(vitalsRoot.transform, "HealthRow", "Health", bar, font, HealthColor);
+        BarWidgets energy = CreateBar(vitalsRoot.transform, "EnergyRow", "Energy", bar, font, EnergyColor);
 
         GameObject death = CreateUiObject("DeathPanel", canvas);
         RectTransform deathRect = death.GetComponent<RectTransform>();
@@ -341,6 +345,7 @@ public static class SetupPlayerVitals
         nameLayout.minWidth = 108f;
 
         Image track = CreateImage("Track", row.transform, panel, TrackColor);
+        track.type = Image.Type.Simple;
         LayoutElement trackLayout = track.gameObject.AddComponent<LayoutElement>();
         trackLayout.preferredWidth = 340f;
         trackLayout.preferredHeight = 30f;
@@ -353,10 +358,10 @@ public static class SetupPlayerVitals
         fill.fillAmount = 1f;
         Stretch(fill.rectTransform, 3f);
 
-        TextMeshProUGUI value = CreateText("Value", row.transform, font, "100/100", 24f, Color.white, TextAlignmentOptions.MidlineRight);
+        TextMeshProUGUI value = CreateText("Value", row.transform, font, "100", 24f, Color.white, TextAlignmentOptions.MidlineRight);
         LayoutElement valueLayout = value.gameObject.AddComponent<LayoutElement>();
-        valueLayout.preferredWidth = 120f;
-        valueLayout.minWidth = 120f;
+        valueLayout.preferredWidth = 72f;
+        valueLayout.minWidth = 72f;
 
         return new BarWidgets { Fill = fill, Value = value };
     }
