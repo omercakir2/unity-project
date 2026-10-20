@@ -9,9 +9,13 @@ public class StairFootIk : MonoBehaviour
     {
         if (layer != 0) return;
 
+        Animator anim = GetComponent<Animator>();
         PlayerController player = GetComponentInParent<PlayerController>();
-        if (player == null) return;
+        if (player != null)
+            player.UpdateStairFeet(anim);
 
-        player.UpdateStairFeet(GetComponent<Animator>());
+        HeldItemVisual held = GetComponentInParent<HeldItemVisual>();
+        if (held != null)
+            held.ApplySearchlightArm(anim);
     }
 }

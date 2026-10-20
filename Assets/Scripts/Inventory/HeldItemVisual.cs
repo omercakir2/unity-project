@@ -13,20 +13,56 @@ public class HeldItemVisual : MonoBehaviour
     private const string HoldLayerName = "Hold";
     private const string HoldStateName = "Torch Hold";
     private const float HoldIdleNormalizedTime = 0.2f;
+    private const float PoseSmoothTime = 0.32f;
+    private const float PoseVisibleThreshold = 0.03f;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int HoldRateHash = Animator.StringToHash("HoldRate");
+
+    // Torch-carry wrist, turned so its upright shaft lies along the searchlight aim.
+    private static readonly Quaternion TorchGripHandLocal = new Quaternion(0.300f, 0.506f, 0.541f, 0.601f);
+    // Handle offset in that fist, in left-hand local space.
+    private static readonly Vector3 SearchlightGripLocalPosition = new Vector3(-0.051f, 0.291f, 0.141f);
+
+    // Opened torch-carry curl so the fingers close around the flashlight instead of into the palm.
+    private static readonly string[] FistBoneSuffixes =
+    {
+        "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
+        "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
+        "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",
+        "LeftHandRing1", "LeftHandRing2", "LeftHandRing3",
+        "LeftHandPinky1", "LeftHandPinky2", "LeftHandPinky3"
+    };
+
+    private static readonly Quaternion[] FistBoneRotations =
+    {
+        new Quaternion(0.351f, -0.041f, -0.118f, 0.928f), new Quaternion(-0.064f, 0.020f, 0.170f, 0.983f), new Quaternion(-0.116f, 0.002f, 0.312f, 0.943f),
+        new Quaternion(0.254f, -0.041f, 0.066f, 0.964f), new Quaternion(0.307f, 0f, 0f, 0.952f), new Quaternion(0.275f, 0f, 0f, 0.962f),
+        new Quaternion(0.302f, -0.019f, 0.038f, 0.952f), new Quaternion(0.307f, 0f, 0f, 0.952f), new Quaternion(0.205f, 0f, 0f, 0.979f),
+        new Quaternion(0.362f, 0.109f, 0.101f, 0.920f), new Quaternion(0.275f, 0f, 0f, 0.962f), new Quaternion(0.256f, 0f, 0f, 0.967f),
+        new Quaternion(0.467f, 0.281f, 0.176f, 0.820f), new Quaternion(0.307f, 0f, 0f, 0.952f), new Quaternion(0.261f, 0f, 0f, 0.965f)
+    };
 
     private GameObject heldTorch;
     private GameObject heldSearchlight;
     private Transform carryHand;
     private Animator animator;
+    private PlayerController player;
     private bool holdPoseParked;
+    private bool poseReady;
+    private string posedItem;
+    private int poseFrame = -1;
+    private float torchPoseWeight;
+    private float torchPoseVelocity;
+    private float searchPoseWeight;
+    private float searchPoseVelocity;
+    private Transform[] fistBones;
 
     private void Awake()
     {
         if (inventory == null)
             inventory = GetComponent<PlayerInventory>();
+        player = GetComponent<PlayerController>();
     }
 
     private void OnEnable()
@@ -44,12 +80,20 @@ public class HeldItemVisual : MonoBehaviour
             inventory.Changed -= Refresh;
     }
 
+    private void Update()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        ApplyPose();
+    }
+
     private void LateUpdate()
     {
         if (!Application.isPlaying)
             return;
 
-        ApplyHoldLayer();
+        SeatSearchlight();
     }
 
     private void Refresh()
@@ -57,8 +101,65 @@ public class HeldItemVisual : MonoBehaviour
         if (!Application.isPlaying || inventory == null)
             return;
 
-        bool showTorch = inventory.ActiveItemId == PlayerInventory.TorchItemId;
-        bool showSearchlight = inventory.ActiveItemId == PlayerInventory.SearchlightItemId;
+        if (inventory.ActiveItemId == PlayerInventory.TorchItemId)
+            EnsureTorch();
+        if (inventory.ActiveItemId == PlayerInventory.SearchlightItemId)
+            EnsureSearchlight();
+
+        ApplyPose();
+    }
+
+    private void ApplyPose()
+    {
+        Animator anim = FindAnimator();
+        if (anim == null || anim.runtimeAnimatorController == null || inventory == null)
+            return;
+
+        int layer = anim.GetLayerIndex(HoldLayerName);
+        if (layer < 0)
+            return;
+
+        if (poseFrame == Time.frameCount)
+            return;
+        poseFrame = Time.frameCount;
+
+        bool selectedTorch = inventory.ActiveItemId == PlayerInventory.TorchItemId;
+        bool selectedSearchlight = inventory.ActiveItemId == PlayerInventory.SearchlightItemId;
+        bool wantTorch = selectedTorch;
+        bool wantSearchlight = selectedSearchlight && (player == null || !player.IsTraversing);
+        float torchTarget = wantTorch ? 1f : 0f;
+        float searchTarget = wantSearchlight ? 1f : 0f;
+
+        if (!poseReady)
+        {
+            torchPoseWeight = torchTarget;
+            searchPoseWeight = searchTarget;
+            torchPoseVelocity = 0f;
+            searchPoseVelocity = 0f;
+            poseReady = true;
+        }
+        else
+        {
+            torchPoseWeight = Mathf.SmoothDamp(torchPoseWeight, torchTarget, ref torchPoseVelocity, PoseSmoothTime);
+            searchPoseWeight = Mathf.SmoothDamp(searchPoseWeight, searchTarget, ref searchPoseVelocity, PoseSmoothTime);
+        }
+
+        torchPoseWeight = Mathf.Clamp01(torchPoseWeight);
+        searchPoseWeight = Mathf.Clamp01(searchPoseWeight);
+
+        if (selectedTorch && torchPoseWeight >= searchPoseWeight)
+            posedItem = PlayerInventory.TorchItemId;
+        else if (selectedSearchlight && (searchPoseWeight >= torchPoseWeight || !wantSearchlight))
+            posedItem = PlayerInventory.SearchlightItemId;
+        else if (!selectedTorch && !selectedSearchlight
+            && torchPoseWeight <= PoseVisibleThreshold
+            && searchPoseWeight <= PoseVisibleThreshold)
+            posedItem = null;
+
+        bool showTorch = posedItem == PlayerInventory.TorchItemId
+            && (selectedTorch || torchPoseWeight > PoseVisibleThreshold);
+        bool showSearchlight = posedItem == PlayerInventory.SearchlightItemId
+            && (selectedSearchlight || searchPoseWeight > PoseVisibleThreshold);
 
         if (showTorch)
             EnsureTorch();
@@ -70,31 +171,20 @@ public class HeldItemVisual : MonoBehaviour
         if (heldSearchlight != null && heldSearchlight.activeSelf != showSearchlight)
             heldSearchlight.SetActive(showSearchlight);
 
-        ApplyHoldLayer();
-    }
-
-    private void ApplyHoldLayer()
-    {
-        Animator anim = FindAnimator();
-        if (anim == null || anim.runtimeAnimatorController == null)
-            return;
-
-        int layer = anim.GetLayerIndex(HoldLayerName);
-        if (layer < 0)
-            return;
-
-        bool holding = IsHoldingLight();
-        anim.SetLayerWeight(layer, holding ? 1f : 0f);
+        anim.SetLayerWeight(layer, torchPoseWeight);
 
         float speed = anim.GetFloat(SpeedHash);
         bool idle = speed < 0.05f;
         float holdRate = 0f;
-        if (holding && !idle)
+        if (torchPoseWeight > PoseVisibleThreshold && !idle)
             holdRate = speed < 0.75f ? 1f : 1.35f;
-
         anim.SetFloat(HoldRateHash, holdRate);
+        ParkHoldIdle(anim, layer, wantTorch, idle);
+    }
 
-        if (!holding || !idle)
+    private void ParkHoldIdle(Animator anim, int layer, bool wantTorch, bool idle)
+    {
+        if (!wantTorch || !idle)
         {
             holdPoseParked = false;
             return;
@@ -103,18 +193,179 @@ public class HeldItemVisual : MonoBehaviour
         if (holdPoseParked)
             return;
 
-        anim.Play(HoldStateName, layer, HoldIdleNormalizedTime);
-        anim.Update(0f);
+        // Park while the layer is still invisible so equipping does not pop the arms.
+        if (torchPoseWeight < 0.05f)
+        {
+            anim.Play(HoldStateName, layer, HoldIdleNormalizedTime);
+            holdPoseParked = true;
+            return;
+        }
+
+        float length = 1.1f;
+        AnimatorClipInfo[] clips = anim.GetCurrentAnimatorClipInfo(layer);
+        if (clips.Length > 0 && clips[0].clip != null)
+            length = clips[0].clip.length;
+        anim.CrossFadeInFixedTime(HoldStateName, 0.25f, layer, HoldIdleNormalizedTime * length);
         holdPoseParked = true;
     }
 
-    private bool IsHoldingLight()
+    public void ApplySearchlightArm(Animator anim)
     {
-        if (inventory == null)
+        if (anim == null || !anim.isHuman)
+            return;
+
+        if (searchPoseWeight <= 0.001f)
+        {
+            anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0f);
+            anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
+            anim.SetIKHintPositionWeight(AvatarIKHint.LeftElbow, 0f);
+            return;
+        }
+
+        Transform shoulder = anim.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+        Transform chest = anim.GetBoneTransform(HumanBodyBones.Chest);
+        if (shoulder == null || chest == null)
+            return;
+
+        Vector3 aim = SearchlightAimDirection(anim.transform, chest.position);
+        Vector3 flatAim = Vector3.ProjectOnPlane(aim, Vector3.up);
+        if (flatAim.sqrMagnitude < 0.0001f)
+            flatAim = anim.transform.forward;
+        flatAim.Normalize();
+
+        float pitch = Mathf.Asin(Mathf.Clamp(aim.y, -1f, 1f));
+        // Keep the light at chest height. The lamp, not the whole arm, follows a steep look.
+        Vector3 handTarget = chest.position
+            + flatAim * 0.28f
+            - anim.transform.right * 0.14f
+            + Vector3.up * (Mathf.Clamp(pitch, -0.35f, 0.35f) * 0.08f + 0.02f);
+
+        Vector3 reach = handTarget - shoulder.position;
+        float reachLength = reach.magnitude;
+        const float minReach = 0.22f;
+        const float maxReach = 0.48f;
+        if (reachLength > maxReach)
+            handTarget = shoulder.position + reach / reachLength * maxReach;
+        else if (reachLength < minReach)
+            handTarget = shoulder.position + reach / Mathf.Max(reachLength, 0.001f) * minReach;
+
+        anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, searchPoseWeight);
+        anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, searchPoseWeight);
+        anim.SetIKPosition(AvatarIKGoal.LeftHand, handTarget);
+        anim.SetIKRotation(AvatarIKGoal.LeftHand, GripRotation(anim.transform, aim));
+
+        Vector3 hint = shoulder.position
+            - anim.transform.right * 0.24f
+            - flatAim * 0.02f
+            + Vector3.down * 0.16f;
+        anim.SetIKHintPositionWeight(AvatarIKHint.LeftElbow, searchPoseWeight);
+        anim.SetIKHintPosition(AvatarIKHint.LeftElbow, hint);
+    }
+
+    private static Quaternion GripRotation(Transform body, Vector3 aim)
+    {
+        Quaternion upright = body.rotation * TorchGripHandLocal;
+        if (aim.sqrMagnitude < 0.0001f)
+            return upright;
+        return Quaternion.FromToRotation(Vector3.up, aim.normalized) * upright;
+    }
+
+    private void SeatSearchlight()
+    {
+        if (searchPoseWeight <= 0.001f || heldSearchlight == null || !heldSearchlight.activeInHierarchy)
+            return;
+
+        Animator anim = FindAnimator();
+        if (anim == null || !anim.isHuman)
+            return;
+
+        Transform hand = anim.GetBoneTransform(HumanBodyBones.LeftHand);
+        Transform chest = anim.GetBoneTransform(HumanBodyBones.Chest);
+        if (hand == null || chest == null)
+            return;
+
+        if (!CurlFist(anim, searchPoseWeight))
+            return;
+
+        Vector3 aim = SearchlightAimDirection(anim.transform, chest.position);
+        float blend = Mathf.Clamp01(searchPoseWeight);
+        hand.rotation = Quaternion.Slerp(hand.rotation, GripRotation(anim.transform, aim), blend);
+
+        Transform light = heldSearchlight.transform;
+        light.localPosition = SearchlightGripLocalPosition;
+        light.localRotation = Quaternion.Euler(torchLocalEuler);
+
+        SearchlightAim lampAim = heldSearchlight.GetComponent<SearchlightAim>();
+        if (lampAim != null)
+            lampAim.AimNow();
+    }
+
+    private bool CurlFist(Animator anim, float weight)
+    {
+        if (!EnsureFistBones(anim))
             return false;
 
-        string item = inventory.ActiveItemId;
-        return item == PlayerInventory.TorchItemId || item == PlayerInventory.SearchlightItemId;
+        for (int i = 0; i < fistBones.Length; i++)
+        {
+            Transform bone = fistBones[i];
+            if (bone == null)
+                continue;
+            bone.localRotation = Quaternion.Slerp(bone.localRotation, FistBoneRotations[i], weight);
+        }
+
+        return fistBones[1] != null && fistBones[4] != null && fistBones[6] != null && fistBones[7] != null;
+    }
+
+    private bool EnsureFistBones(Animator anim)
+    {
+        if (fistBones != null && fistBones.Length == FistBoneSuffixes.Length && fistBones[0] != null)
+            return true;
+
+        fistBones = new Transform[FistBoneSuffixes.Length];
+        Transform[] bones = anim.GetComponentsInChildren<Transform>(true);
+        int found = 0;
+        for (int i = 0; i < bones.Length; i++)
+        {
+            string name = bones[i].name;
+            for (int s = 0; s < FistBoneSuffixes.Length; s++)
+            {
+                if (fistBones[s] != null || !name.EndsWith(FistBoneSuffixes[s]))
+                    continue;
+                fistBones[s] = bones[i];
+                found++;
+                break;
+            }
+        }
+
+        return found > 0;
+    }
+
+    private Vector3 SearchlightAimDirection(Transform body, Vector3 from)
+    {
+        Vector3 aimPoint = from + body.forward * 12f;
+        if (heldSearchlight != null)
+        {
+            SearchlightAim aim = heldSearchlight.GetComponent<SearchlightAim>();
+            if (aim != null)
+                aim.TryGetAimPoint(out aimPoint);
+        }
+
+        Vector3 toPoint = aimPoint - from;
+        Vector3 flat = Vector3.ProjectOnPlane(toPoint, Vector3.up);
+        if (flat.sqrMagnitude < 0.0001f)
+            flat = body.forward;
+        else
+            flat.Normalize();
+
+        // Keep the arm in front of the body when the crosshair falls behind or on the player.
+        if (Vector3.Dot(flat, body.forward) < 0.2f)
+            flat = Vector3.Slerp(body.forward, flat, 0.25f).normalized;
+
+        float pitch = 0f;
+        if (toPoint.sqrMagnitude > 0.0001f)
+            pitch = Mathf.Asin(Mathf.Clamp(toPoint.normalized.y, -1f, 1f));
+        pitch = Mathf.Clamp(pitch, -32f * Mathf.Deg2Rad, 32f * Mathf.Deg2Rad);
+        return flat * Mathf.Cos(pitch) + Vector3.up * Mathf.Sin(pitch);
     }
 
     private Animator FindAnimator()
@@ -194,11 +445,24 @@ public class HeldItemVisual : MonoBehaviour
 
     public void DetachHeldItems()
     {
+        if (animator != null)
+        {
+            int layer = animator.GetLayerIndex(HoldLayerName);
+            if (layer >= 0)
+                animator.SetLayerWeight(layer, 0f);
+        }
+
         Park(heldTorch);
         Park(heldSearchlight);
         carryHand = null;
         animator = null;
         holdPoseParked = false;
+        poseReady = false;
+        torchPoseWeight = 0f;
+        searchPoseWeight = 0f;
+        torchPoseVelocity = 0f;
+        searchPoseVelocity = 0f;
+        fistBones = null;
     }
 
     public void RebindHand()
