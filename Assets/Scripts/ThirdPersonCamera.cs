@@ -80,6 +80,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (Time.timeScale <= 0f) return;
         if (target == null) return;
 
         // Input System Action Map kullanılıyorsa buradan da okunabilir

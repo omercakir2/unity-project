@@ -120,6 +120,48 @@ public class HeldItemVisual : MonoBehaviour
             colliders[i].enabled = false;
     }
 
+    public void DetachHeldItems()
+    {
+        Park(heldTorch);
+        Park(heldSearchlight);
+        rightHand = null;
+    }
+
+    public void RebindHand()
+    {
+        rightHand = null;
+        Transform hand = FindRightHand();
+        if (hand == null)
+        {
+            if (heldTorch != null || heldSearchlight != null)
+                Debug.LogError("[Inventory] Right hand bone was not found.");
+            return;
+        }
+
+        Attach(heldTorch, hand, torchLocalPosition, torchLocalEuler);
+        Attach(heldSearchlight, hand, searchlightLocalPosition, searchlightLocalEuler);
+    }
+
+    private void Park(GameObject item)
+    {
+        if (item == null)
+            return;
+
+        item.transform.SetParent(transform, false);
+    }
+
+    private void Attach(GameObject item, Transform hand, Vector3 localPosition, Vector3 localEuler)
+    {
+        if (item == null)
+            return;
+
+        bool active = item.activeSelf;
+        item.transform.SetParent(hand, false);
+        ApplyGrip(item.transform, localPosition, localEuler);
+        if (item.activeSelf != active)
+            item.SetActive(active);
+    }
+
     private Transform FindRightHand()
     {
         if (rightHand != null)

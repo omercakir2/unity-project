@@ -33,6 +33,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravity = -40f;
     [SerializeField] private LayerMask traversalMask = ~0;
 
+    [Header("Animation Blend")]
+    [SerializeField] private float speedBlendStart = 0.22f;
+    [SerializeField] private float speedBlendStop = 0.48f;
+    [SerializeField] private float tiredBlend = 0.55f;
+
     [Header("References")]
     [SerializeField, Tooltip("Main Camera Transform (auto-assigned if not set)")]
     private Transform cameraTransform;
@@ -45,6 +50,8 @@ public class PlayerController : MonoBehaviour
     private bool initialized;
     private Vector3 worldMoveDir;
 
+    private PlayerVitals vitals;
+
     private CharacterController Controller
     {
         get
@@ -55,7 +62,36 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public bool IsSprintingNow => traversal == TraversalKind.None && Exerting;
+    public bool IsMoving => initialized && moveInput.magnitude > 0.1f;
+    public bool IsGrounded => initialized && Controller != null && Controller.isGrounded;
+    public bool IsTraversing => traversal != TraversalKind.None;
+
+    private bool sprintRecoverLatch;
+
+    private bool Exerting
+    {
+        get
+        {
+            if (!initialized || moveInput.magnitude <= 0.1f || !isSprinting)
+            {
+                sprintRecoverLatch = false;
+                return false;
+            }
+
+            // Stay in the walk until Shift is released, so a full bar does not
+            // tick back under 20% on the next sprint frame.
+            if (vitals != null && !vitals.CanSprint)
+                sprintRecoverLatch = true;
+            if (sprintRecoverLatch)
+                return false;
+
+            return true;
+        }
+    }
+
     private readonly int speedHash = Animator.StringToHash("Speed");
+    private readonly int tiredHash = Animator.StringToHash("Tired");
     private readonly int isSprintingHash = Animator.StringToHash("IsSprinting");
     private readonly int jumpHash = Animator.StringToHash("Jump");
     private readonly int climbHash = Animator.StringToHash("Climb");
@@ -65,6 +101,11 @@ public class PlayerController : MonoBehaviour
     private readonly int walkUpStairsHash = Animator.StringToHash("Walk Up Stairs");
     private readonly int runUpStairsHash = Animator.StringToHash("Run Up Stairs");
     private readonly int descendStairsHash = Animator.StringToHash("Descend Stairs");
+
+    private float visualSpeed;
+    private float visualSpeedVelocity;
+    private float visualTired;
+    private float visualTiredVelocity;
 
     private enum TraversalKind { None, Climb, JumpDown }
     private TraversalKind traversal;
@@ -141,11 +182,41 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        vitals = GetComponent<PlayerVitals>();
         CacheLimbs();
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
         initialized = true;
         Debug.Log("[PlayerController] Successfully initialized.");
+    }
+
+    public void RecacheLimbs()
+    {
+        leftHand = null;
+        rightHand = null;
+        leftFingertip = null;
+        rightFingertip = null;
+        leftFoot = null;
+        rightFoot = null;
+        leftToes = null;
+        rightToes = null;
+        stairClipsBaked = false;
+        walkStairMatch.ready = false;
+        walkStairMatch.plants.Clear();
+        runStairMatch.ready = false;
+        runStairMatch.plants.Clear();
+        descendStairMatch.ready = false;
+        descendStairMatch.plants.Clear();
+
+        animator = GetComponentInChildren<Animator>();
+        if (animator != null)
+        {
+            animator.applyRootMotion = false;
+            if (Application.isPlaying && animator.GetComponent<StairFootIk>() == null)
+                animator.gameObject.AddComponent<StairFootIk>();
+        }
+
+        CacheLimbs();
     }
 
     private void CacheLimbs()
@@ -275,6 +346,8 @@ public class PlayerController : MonoBehaviour
     {
         if (Controller == null || !Controller.isGrounded) return;
         if (traversal != TraversalKind.None) return;
+        if (vitals != null && !vitals.CanJump) return;
+        vitals?.SpendJumpEnergy();
 
         if (TryGetClimb(out Vector3 climbEnd, out Vector3 landingFeet, out Vector3 lip, out float clearance, out float obstacleTop))
         {
@@ -346,7 +419,7 @@ public class PlayerController : MonoBehaviour
                 EnsureStairMetrics();
             float currentSpeed = onStairs
                 ? StairMatchedSpeed()
-                : (isSprinting ? sprintSpeed : walkSpeed);
+                : (Exerting ? sprintSpeed : walkSpeed);
             velocity.x = desiredMoveDir.x * currentSpeed;
             velocity.z = desiredMoveDir.z * currentSpeed;
         }
@@ -407,10 +480,18 @@ public class PlayerController : MonoBehaviour
 
         float inputMagnitude = moveInput.magnitude;
         bool isMoving = inputMagnitude > 0.1f;
-        float targetSpeed = isMoving ? (isSprinting ? 1.0f : 0.5f) : 0f;
+        bool sprinting = Exerting;
+        float targetSpeed = isMoving ? (sprinting ? 1.0f : 0.5f) : 0f;
 
-        animator.SetFloat(speedHash, targetSpeed, 0.1f, Time.deltaTime);
-        animator.SetBool(isSprintingHash, isSprinting && isMoving);
+        // Stopping takes longer than starting so idle/walk Mixamo poses have time to mix.
+        float speedSmooth = targetSpeed < visualSpeed - 0.01f ? speedBlendStop : speedBlendStart;
+        visualSpeed = Mathf.SmoothDamp(visualSpeed, targetSpeed, ref visualSpeedVelocity, speedSmooth);
+        animator.SetFloat(speedHash, visualSpeed);
+        animator.SetBool(isSprintingHash, sprinting);
+
+        bool energyLow = vitals != null && vitals.IsEnergyLow;
+        visualTired = Mathf.SmoothDamp(visualTired, energyLow ? 1f : 0f, ref visualTiredVelocity, tiredBlend);
+        animator.SetFloat(tiredHash, visualTired);
     }
 
     private bool IsOnStairs()
@@ -753,7 +834,7 @@ public class PlayerController : MonoBehaviour
     private float StairMatchedSpeed()
     {
         bool down = StairDirectionValue() < 0f;
-        bool runningUp = !down && isSprinting;
+        bool runningUp = !down && Exerting;
         string clipName = down ? "Descend Stairs" : runningUp ? "Run Up Stairs" : "Walk Up Stairs";
         float fallback = down ? 0.933f : runningUp ? 0.6f : 1.2f;
         float cycle = ClipDuration(clipName, fallback);
@@ -805,7 +886,7 @@ public class PlayerController : MonoBehaviour
         }
 
         int state = direction > 0f
-            ? (isSprinting ? runUpStairsHash : walkUpStairsHash)
+            ? (Exerting ? runUpStairsHash : walkUpStairsHash)
             : descendStairsHash;
 
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
@@ -1056,9 +1137,10 @@ public class PlayerController : MonoBehaviour
         {
             animator.speed = 1f;
             animator.ResetTrigger(climbHash);
+            visualSpeed = 0f;
+            visualSpeedVelocity = 0f;
             animator.SetFloat(speedHash, 0f);
-            animator.Play("Blend Tree", 0, 0f);
-            animator.Update(0f);
+            animator.CrossFadeInFixedTime("Blend Tree", 0.3f, 0, 0f);
         }
 
         Vector3 standOn = climbLandingFeet;
