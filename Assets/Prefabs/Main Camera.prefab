@@ -156,7 +156,8 @@ MonoBehaviour:
   rotationSpeed: 25
   minVerticalAngle: -65
   maxVerticalAngle: 70
-  smoothTime: 0.15
+  maxYawFromBehind: 40
+  smoothTime: 0.2
   collisionRadius: 0.4
   collisionMask:
     serializedVersion: 2

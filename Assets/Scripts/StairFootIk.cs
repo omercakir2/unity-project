@@ -16,6 +16,9 @@ public class StairFootIk : MonoBehaviour
 
         HeldItemVisual held = GetComponentInParent<HeldItemVisual>();
         if (held != null)
+        {
             held.ApplySearchlightArm(anim);
+            held.ApplyPistolArms(anim);
+        }
     }
 }

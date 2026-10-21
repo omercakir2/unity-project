@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DefaultExecutionOrder(100)]
 public class ThirdPersonCamera : MonoBehaviour
 {
     [Header("Target")]
@@ -18,6 +19,10 @@ public class ThirdPersonCamera : MonoBehaviour
     public float minVerticalAngle = -30f;
     [Tooltip("Maximum vertical angle (up)")]
     public float maxVerticalAngle = 60f;
+    [Tooltip("How far the view may swing to either side of a straight rear view. Further horizontal look turns the character.")]
+    public float maxYawFromBehind = 135f;
+    [Tooltip("How far the view shifts onto the character's right while the pistol pose is fully in")]
+    public float pistolShoulderOffset = 0.55f;
 
     [Header("Smoothing")]
     public float smoothTime = 0.12f;
@@ -33,6 +38,8 @@ public class ThirdPersonCamera : MonoBehaviour
     private Vector3 currentVelocity = Vector3.zero; // Veya Vector3.zero
     private Vector2 lookInput;
     private InputAction lookAction;
+    private PlayerController player;
+    private HeldItemVisual heldItems;
 
     private void Start()
     {
@@ -66,6 +73,7 @@ public class ThirdPersonCamera : MonoBehaviour
         if (target != null)
         {
             currentYaw = target.eulerAngles.y;
+            player = target.GetComponentInParent<PlayerController>();
         }
 
         // Fareyi kilitleyelim
@@ -90,9 +98,10 @@ public class ThirdPersonCamera : MonoBehaviour
         }
 
         // Fare hareketini uygula (Hassasiyet için Time.deltaTime kullanılabilir veya bağımsız tutulabilir)
-        currentYaw += lookInput.x * rotationSpeed * 0.02f; // Mouse delta değerleri genelde deltaTime gerektirmez ama hassasiyete göre ayarlanabilir
+        float yawDelta = lookInput.x * rotationSpeed * 0.02f;
         currentPitch -= lookInput.y * rotationSpeed * 0.02f;
         currentPitch = Mathf.Clamp(currentPitch, minVerticalAngle, maxVerticalAngle);
+        ApplyYawLimit(yawDelta);
 
         // Fare girdisini işledikten hemen sonra sıfırlıyoruz ki durduğunda kamera kaymasın
         // (Eğer OnLook kullanıyorsanız ve bu satır girdiyi kesiyorsa silebilirsiniz, ancak Update tabanlı okuma için önemlidir)
@@ -100,7 +109,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
         // Hedef rotasyon ve pozisyon
         Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
-        Vector3 targetFocusPosition = target.position + Vector3.up * height;
+        Vector3 targetFocusPosition = target.position + Vector3.up * height + PistolShoulderShift();
         
         // Kamera ideal pozisyonu
         Vector3 desiredPosition = targetFocusPosition - (rotation * Vector3.forward * distance);
@@ -118,8 +127,67 @@ public class ThirdPersonCamera : MonoBehaviour
         // Yumuşak geçiş (SmoothDamp)
         transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
 
-        // Kameranın hedefe bakması
-        transform.LookAt(target.position + Vector3.up * 1.5f);
+        // Kameranın hedefe bakması. The shoulder shift keeps the player left of the crosshair.
+        transform.LookAt(target.position + Vector3.up * 1.5f + PistolShoulderShift());
+    }
+
+    private Vector3 PistolShoulderShift()
+    {
+        if (heldItems == null)
+        {
+            if (player == null && target != null)
+                player = target.GetComponentInParent<PlayerController>();
+            if (player != null)
+                heldItems = player.GetComponent<HeldItemVisual>();
+        }
+
+        if (heldItems == null || pistolShoulderOffset <= 0f)
+            return Vector3.zero;
+
+        float weight = heldItems.PistolPoseWeight;
+        if (weight <= 0.001f)
+            return Vector3.zero;
+
+        Transform body = player != null ? player.transform : target;
+        Vector3 right = Vector3.ProjectOnPlane(body.right, Vector3.up);
+        if (right.sqrMagnitude < 0.0001f)
+            return Vector3.zero;
+
+        return right.normalized * (pistolShoulderOffset * weight);
+    }
+
+    private void ApplyYawLimit(float yawDelta)
+    {
+        if (player == null && target != null)
+            player = target.GetComponentInParent<PlayerController>();
+        if (player == null)
+        {
+            currentYaw += yawDelta;
+            return;
+        }
+
+        // Add the mouse delta onto the current offset. DeltaAngle alone would
+        // flip a fast swing that crosses 180° onto the opposite side.
+        float characterYaw = player.transform.eulerAngles.y;
+        float relative = Mathf.DeltaAngle(characterYaw, currentYaw);
+        float limit = Mathf.Max(0f, maxYawFromBehind);
+        float next = relative + yawDelta;
+        float clamped = Mathf.Clamp(next, -limit, limit);
+        float excess = next - clamped;
+
+        // Climb and jump-down own facing. Extra mouse is dropped so the view stays beside them.
+        if (player.IsTraversing)
+        {
+            currentYaw = characterYaw + clamped;
+            return;
+        }
+
+        if (Mathf.Abs(excess) < 0.01f)
+            excess = 0f;
+        else
+            player.transform.Rotate(0f, excess, 0f, Space.World);
+
+        currentYaw = characterYaw + excess + clamped;
     }
 
     public void OnMouseLookToggle(InputAction.CallbackContext context)

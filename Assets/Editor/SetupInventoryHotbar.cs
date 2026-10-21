@@ -13,6 +13,7 @@ public static class SetupInventoryHotbar
     private const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
     private const string TorchPrefabPath = "Assets/Prefabs/Torch.prefab";
     private const string SearchlightPrefabPath = "Assets/Prefabs/Searchlight.prefab";
+    private const string PistolPrefabPath = "Assets/Prefabs/Pistol.prefab";
     private const string FontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
 
     [MenuItem("Tools/Setup Inventory Hotbar")]
@@ -41,6 +42,10 @@ public static class SetupInventoryHotbar
         if (searchlightPrefab == null)
             return "missing-searchlight-prefab";
 
+        GameObject pistolPrefab = CreatePistolPrefab();
+        if (pistolPrefab == null)
+            return "missing-pistol-prefab";
+
         InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/Input/PlayerInputActions.inputactions");
         if (actions == null || actions.FindAction("Hotbar1", false) == null)
             return "missing-hotbar-actions";
@@ -61,6 +66,9 @@ public static class SetupInventoryHotbar
             heldObject.FindProperty("inventory").objectReferenceValue = inventory;
             heldObject.FindProperty("torchPrefab").objectReferenceValue = torchPrefab;
             heldObject.FindProperty("searchlightPrefab").objectReferenceValue = searchlightPrefab;
+            heldObject.FindProperty("pistolPrefab").objectReferenceValue = pistolPrefab;
+            heldObject.FindProperty("pistolLocalPosition").vector3Value = new Vector3(0.02f, 0.28f, 0.06f);
+            heldObject.FindProperty("pistolLocalEuler").vector3Value = new Vector3(-90f, 0f, 0f);
             heldObject.ApplyModifiedPropertiesWithoutUndo();
 
             Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
@@ -148,13 +156,14 @@ public static class SetupInventoryHotbar
 
         for (int i = 0; i < 4; i++)
         {
-            string itemId = i == 0 ? PlayerInventory.TorchItemId : i == 1 ? PlayerInventory.SearchlightItemId : null;
+            string itemId = i == 0 ? PlayerInventory.TorchItemId : i == 1 ? PlayerInventory.SearchlightItemId : i == 2 ? PlayerInventory.PistolItemId : null;
             SlotParts parts = CreateSlot(hotbar.transform, panel, knob, font, i + 1, itemId, i == 0);
             SerializedProperty slot = slots.GetArrayElementAtIndex(i);
             slot.FindPropertyRelative("background").objectReferenceValue = parts.Background;
             slot.FindPropertyRelative("highlight").objectReferenceValue = parts.Highlight;
             slot.FindPropertyRelative("torchGlyph").objectReferenceValue = parts.TorchGlyph;
             slot.FindPropertyRelative("searchlightGlyph").objectReferenceValue = parts.SearchlightGlyph;
+            slot.FindPropertyRelative("pistolGlyph").objectReferenceValue = parts.PistolGlyph;
         }
 
         viewObject.ApplyModifiedPropertiesWithoutUndo();
@@ -167,6 +176,7 @@ public static class SetupInventoryHotbar
         public Image Highlight;
         public GameObject TorchGlyph;
         public GameObject SearchlightGlyph;
+        public GameObject PistolGlyph;
     }
 
     private static SlotParts CreateSlot(Transform parent, Sprite panel, Sprite knob, TMP_FontAsset font, int number, string itemId, bool active)
@@ -243,6 +253,9 @@ public static class SetupInventoryHotbar
         searchLensRect.sizeDelta = new Vector2(12f, 12f);
         searchGlyph.SetActive(itemId == PlayerInventory.SearchlightItemId);
 
+        GameObject pistolGlyph = CreatePistolGlyph(slot.transform, panel);
+        pistolGlyph.SetActive(itemId == PlayerInventory.PistolItemId);
+
         GameObject labelGo = CreateUiObject("Index", slot.transform);
         RectTransform labelRect = labelGo.GetComponent<RectTransform>();
         labelRect.anchorMin = new Vector2(0f, 1f);
@@ -264,8 +277,117 @@ public static class SetupInventoryHotbar
             Background = background,
             Highlight = highlight,
             TorchGlyph = glyph,
-            SearchlightGlyph = searchGlyph
+            SearchlightGlyph = searchGlyph,
+            PistolGlyph = pistolGlyph
         };
+    }
+
+    private static GameObject CreatePistolGlyph(Transform slot, Sprite panel)
+    {
+        GameObject glyph = CreateUiObject("PistolGlyph", slot);
+        RectTransform glyphRect = glyph.GetComponent<RectTransform>();
+        glyphRect.anchorMin = new Vector2(0.5f, 0.5f);
+        glyphRect.anchorMax = new Vector2(0.5f, 0.5f);
+        glyphRect.pivot = new Vector2(0.5f, 0.5f);
+        glyphRect.anchoredPosition = new Vector2(2f, -2f);
+        glyphRect.sizeDelta = new Vector2(46f, 28f);
+
+        UnityEngine.UI.Image slide = CreateImage("Slide", glyph.transform, panel, new Color(0.22f, 0.23f, 0.26f, 1f));
+        slide.type = UnityEngine.UI.Image.Type.Simple;
+        RectTransform slideRect = slide.rectTransform;
+        slideRect.anchorMin = new Vector2(0.5f, 1f);
+        slideRect.anchorMax = new Vector2(0.5f, 1f);
+        slideRect.pivot = new Vector2(0.5f, 1f);
+        slideRect.anchoredPosition = new Vector2(0f, -2f);
+        slideRect.sizeDelta = new Vector2(34f, 6f);
+
+        UnityEngine.UI.Image barrel = CreateImage("Barrel", glyph.transform, panel, new Color(0.16f, 0.17f, 0.19f, 1f));
+        barrel.type = UnityEngine.UI.Image.Type.Simple;
+        RectTransform barrelRect = barrel.rectTransform;
+        barrelRect.anchorMin = new Vector2(1f, 1f);
+        barrelRect.anchorMax = new Vector2(1f, 1f);
+        barrelRect.pivot = new Vector2(1f, 1f);
+        barrelRect.anchoredPosition = new Vector2(-2f, -3f);
+        barrelRect.sizeDelta = new Vector2(12f, 4f);
+
+        UnityEngine.UI.Image grip = CreateImage("Grip", glyph.transform, panel, new Color(0.1f, 0.1f, 0.11f, 1f));
+        grip.type = UnityEngine.UI.Image.Type.Simple;
+        RectTransform gripRect = grip.rectTransform;
+        gripRect.anchorMin = new Vector2(0f, 0f);
+        gripRect.anchorMax = new Vector2(0f, 0f);
+        gripRect.pivot = new Vector2(0f, 0f);
+        gripRect.anchoredPosition = new Vector2(8f, 2f);
+        gripRect.sizeDelta = new Vector2(8f, 16f);
+        gripRect.localRotation = Quaternion.Euler(0f, 0f, 12f);
+
+        return glyph;
+    }
+
+    public static string InstallPistol()
+    {
+        GameObject pistolPrefab = CreatePistolPrefab();
+        if (pistolPrefab == null)
+            return "missing-pistol-prefab";
+
+        GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+        try
+        {
+            PlayerInventory inventory = root.GetComponent<PlayerInventory>();
+            if (inventory == null)
+                return "missing-inventory";
+            inventory.ApplyDefaultState();
+
+            HeldItemVisual held = root.GetComponent<HeldItemVisual>();
+            if (held == null)
+                return "missing-held-visual";
+
+            SerializedObject heldObject = new SerializedObject(held);
+            heldObject.FindProperty("pistolPrefab").objectReferenceValue = pistolPrefab;
+            heldObject.FindProperty("pistolLocalPosition").vector3Value = new Vector3(0.02f, 0.28f, 0.06f);
+            heldObject.FindProperty("pistolLocalEuler").vector3Value = new Vector3(-90f, 0f, 0f);
+            heldObject.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform slot = root.transform.Find("InventoryCanvas/Hotbar/Slot3");
+            if (slot == null)
+                return "missing-slot3";
+
+            Transform existing = slot.Find("PistolGlyph");
+            if (existing != null)
+                Object.DestroyImmediate(existing.gameObject);
+
+            Sprite panel = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            GameObject glyph = CreatePistolGlyph(slot, panel);
+            glyph.SetActive(true);
+
+            InventoryHotbarView view = root.GetComponentInChildren<InventoryHotbarView>(true);
+            if (view == null)
+                return "missing-view";
+
+            SerializedObject viewObject = new SerializedObject(view);
+            SerializedProperty slots = viewObject.FindProperty("slots");
+            if (slots == null || slots.arraySize < 3)
+                return "missing-slots";
+            slots.GetArrayElementAtIndex(2).FindPropertyRelative("pistolGlyph").objectReferenceValue = glyph;
+            viewObject.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform crosshair = root.transform.Find("InventoryCanvas/Crosshair");
+            if (crosshair != null)
+            {
+                Transform horizontalBar = crosshair.Find("Horizontal");
+                Transform verticalBar = crosshair.Find("Vertical");
+                if (horizontalBar is RectTransform horizontalRect)
+                    horizontalRect.sizeDelta = new Vector2(28f, 4f);
+                if (verticalBar is RectTransform verticalRect)
+                    verticalRect.sizeDelta = new Vector2(4f, 28f);
+            }
+
+            PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+            return "ok";
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
     }
 
     private static GameObject CreateCrosshair(Transform canvas, Sprite panel)
@@ -284,7 +406,7 @@ public static class SetupInventoryHotbar
         horizontalRect.anchorMin = new Vector2(0.5f, 0.5f);
         horizontalRect.anchorMax = new Vector2(0.5f, 0.5f);
         horizontalRect.pivot = new Vector2(0.5f, 0.5f);
-        horizontalRect.sizeDelta = new Vector2(16f, 2f);
+        horizontalRect.sizeDelta = new Vector2(28f, 4f);
 
         Image vertical = CreateImage("Vertical", crosshair.transform, panel, new Color(1f, 1f, 1f, 0.92f));
         vertical.type = Image.Type.Simple;
@@ -292,7 +414,7 @@ public static class SetupInventoryHotbar
         verticalRect.anchorMin = new Vector2(0.5f, 0.5f);
         verticalRect.anchorMax = new Vector2(0.5f, 0.5f);
         verticalRect.pivot = new Vector2(0.5f, 0.5f);
-        verticalRect.sizeDelta = new Vector2(2f, 16f);
+        verticalRect.sizeDelta = new Vector2(4f, 28f);
 
         crosshair.SetActive(false);
         return crosshair;
@@ -339,6 +461,47 @@ public static class SetupInventoryHotbar
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, SearchlightPrefabPath);
         Object.DestroyImmediate(root);
         return prefab;
+    }
+
+    private static GameObject CreatePistolPrefab()
+    {
+        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PistolPrefabPath);
+        if (existing != null && existing.GetComponentInChildren<Renderer>(true) != null)
+            return existing;
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            Debug.LogError("[Inventory] URP Lit shader was not found.");
+            return null;
+        }
+
+        Material slideMaterial = SaveMaterial("Assets/Materials/PistolSlide.mat", shader, new Color(0.16f, 0.17f, 0.19f), 0.72f, 0.58f, Color.black);
+        Material gripMaterial = SaveMaterial("Assets/Materials/PistolGrip.mat", shader, new Color(0.08f, 0.08f, 0.09f), 0.05f, 0.32f, Color.black);
+
+        GameObject root = new GameObject("Pistol");
+        Quaternion barrelSpin = Quaternion.Euler(-90f, 0f, 0f);
+        CreatePart("Slide", root.transform, PrimitiveType.Cube, slideMaterial, new Vector3(0f, 0.018f, 0.03f), Quaternion.identity, new Vector3(0.028f, 0.03f, 0.15f));
+        CreatePart("Barrel", root.transform, PrimitiveType.Cylinder, slideMaterial, new Vector3(0f, 0.016f, 0.125f), barrelSpin, new Vector3(0.012f, 0.032f, 0.012f));
+        CreatePart("Sight", root.transform, PrimitiveType.Cube, slideMaterial, new Vector3(0f, 0.04f, 0.09f), Quaternion.identity, new Vector3(0.006f, 0.014f, 0.01f));
+        CreatePart("Grip", root.transform, PrimitiveType.Cube, gripMaterial, new Vector3(0f, -0.04f, -0.012f), Quaternion.Euler(16f, 0f, 0f), new Vector3(0.026f, 0.078f, 0.036f));
+        CreatePart("Guard", root.transform, PrimitiveType.Cube, slideMaterial, new Vector3(0f, -0.008f, 0.028f), Quaternion.identity, new Vector3(0.02f, 0.026f, 0.006f));
+
+        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PistolPrefabPath);
+        Object.DestroyImmediate(root);
+        return prefab;
+    }
+
+    private static void CreatePart(string name, Transform parent, PrimitiveType type, Material material, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+    {
+        GameObject part = GameObject.CreatePrimitive(type);
+        part.name = name;
+        Object.DestroyImmediate(part.GetComponent<Collider>());
+        part.transform.SetParent(parent, false);
+        part.transform.localPosition = localPosition;
+        part.transform.localRotation = localRotation;
+        part.transform.localScale = localScale;
+        part.GetComponent<Renderer>().sharedMaterial = material;
     }
 
     private static void CreateCylinder(string name, Transform parent, Material material, Vector3 localPosition, Vector3 localScale)

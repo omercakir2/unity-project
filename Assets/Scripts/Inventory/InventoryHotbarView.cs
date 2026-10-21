@@ -19,6 +19,7 @@ public class InventoryHotbarView : MonoBehaviour
         [SerializeField] private UnityEngine.UI.Image highlight;
         [SerializeField] private GameObject torchGlyph;
         [SerializeField] private GameObject searchlightGlyph;
+        [SerializeField] private GameObject pistolGlyph;
 
         public void Apply(bool occupied, string itemId, bool showPreview, bool active)
         {
@@ -29,10 +30,13 @@ public class InventoryHotbarView : MonoBehaviour
 
             bool showTorch = showPreview && itemId == PlayerInventory.TorchItemId;
             bool showSearchlight = showPreview && itemId == PlayerInventory.SearchlightItemId;
+            bool showPistol = showPreview && itemId == PlayerInventory.PistolItemId;
             if (torchGlyph != null && torchGlyph.activeSelf != showTorch)
                 torchGlyph.SetActive(showTorch);
             if (searchlightGlyph != null && searchlightGlyph.activeSelf != showSearchlight)
                 searchlightGlyph.SetActive(showSearchlight);
+            if (pistolGlyph != null && pistolGlyph.activeSelf != showPistol)
+                pistolGlyph.SetActive(showPistol);
         }
     }
 
@@ -77,7 +81,8 @@ public class InventoryHotbarView : MonoBehaviour
 
         if (crosshair != null)
         {
-            bool showCrosshair = inventory.ActiveItemId == PlayerInventory.SearchlightItemId;
+            bool showCrosshair = inventory.ActiveItemId == PlayerInventory.SearchlightItemId
+                || inventory.ActiveItemId == PlayerInventory.PistolItemId;
             if (crosshair.activeSelf != showCrosshair)
                 crosshair.SetActive(showCrosshair);
         }
