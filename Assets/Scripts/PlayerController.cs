@@ -92,6 +92,7 @@ public class PlayerController : MonoBehaviour
 
     private readonly int speedHash = Animator.StringToHash("Speed");
     private readonly int tiredHash = Animator.StringToHash("Tired");
+    private readonly int pistolRateHash = Animator.StringToHash("PistolRate");
     private readonly int isSprintingHash = Animator.StringToHash("IsSprinting");
     private readonly int jumpHash = Animator.StringToHash("Jump");
     private readonly int climbHash = Animator.StringToHash("Climb");
@@ -488,6 +489,11 @@ public class PlayerController : MonoBehaviour
         visualSpeed = Mathf.SmoothDamp(visualSpeed, targetSpeed, ref visualSpeedVelocity, speedSmooth);
         animator.SetFloat(speedHash, visualSpeed);
         animator.SetBool(isSprintingHash, sprinting);
+        // Pistol locomotion is one walk clip. Speed it up with the sprint so the feet keep up.
+        float pistolRate = 1f;
+        if (visualSpeed > 0.5f && walkSpeed > 0.01f)
+            pistolRate = Mathf.Lerp(1f, sprintSpeed / walkSpeed, (visualSpeed - 0.5f) * 2f);
+        animator.SetFloat(pistolRateHash, pistolRate);
 
         bool energyLow = vitals != null && vitals.IsEnergyLow;
         visualTired = Mathf.SmoothDamp(visualTired, energyLow ? 1f : 0f, ref visualTiredVelocity, tiredBlend);

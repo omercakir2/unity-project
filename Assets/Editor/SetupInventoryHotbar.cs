@@ -440,23 +440,16 @@ public static class SetupInventoryHotbar
         CreateCylinder("Head", lamp.transform, bodyMaterial, new Vector3(0f, 0f, 0.15f), new Vector3(0.085f, 0.028f, 0.085f));
         CreateCylinder("Lens", lamp.transform, lensMaterial, new Vector3(0f, 0f, 0.18f), new Vector3(0.062f, 0.01f, 0.062f));
 
-        GameObject beam = new GameObject("Beam");
-        beam.transform.SetParent(lamp.transform, false);
-        beam.transform.localPosition = new Vector3(0f, 0f, 0.2f);
-        Light spot = beam.AddComponent<Light>();
-        spot.type = LightType.Spot;
-        spot.color = new Color(0.78f, 0.9f, 1f);
-        spot.intensity = 18f;
-        spot.range = 28f;
-        spot.spotAngle = 34f;
-        spot.innerSpotAngle = 18f;
-        spot.shadows = LightShadows.Soft;
-        spot.shadowStrength = 0.65f;
-
-        SearchlightAim aim = root.AddComponent<SearchlightAim>();
-        SerializedObject aimObject = new SerializedObject(aim);
-        aimObject.FindProperty("lamp").objectReferenceValue = lamp.transform;
-        aimObject.ApplyModifiedPropertiesWithoutUndo();
+        GameObject source = new GameObject("Light");
+        source.transform.SetParent(lamp.transform, false);
+        source.transform.localPosition = new Vector3(0f, 0f, 0.18f);
+        Light point = source.AddComponent<Light>();
+        point.type = LightType.Point;
+        point.color = new Color(0.82f, 0.9f, 1f);
+        point.intensity = 6f;
+        point.range = 8f;
+        point.shadows = LightShadows.Soft;
+        point.shadowStrength = 0.45f;
 
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, SearchlightPrefabPath);
         Object.DestroyImmediate(root);

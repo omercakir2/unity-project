@@ -157,6 +157,8 @@ MonoBehaviour:
   minVerticalAngle: -65
   maxVerticalAngle: 70
   maxYawFromBehind: 40
+  pistolShoulderOffset: 0.85
+  recoilRecovery: 9
   smoothTime: 0.2
   collisionRadius: 0.4
   collisionMask:

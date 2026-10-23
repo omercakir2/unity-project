@@ -13,12 +13,5 @@ public class StairFootIk : MonoBehaviour
         PlayerController player = GetComponentInParent<PlayerController>();
         if (player != null)
             player.UpdateStairFeet(anim);
-
-        HeldItemVisual held = GetComponentInParent<HeldItemVisual>();
-        if (held != null)
-        {
-            held.ApplySearchlightArm(anim);
-            held.ApplyPistolArms(anim);
-        }
     }
 }

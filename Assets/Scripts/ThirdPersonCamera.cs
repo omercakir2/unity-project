@@ -22,7 +22,9 @@ public class ThirdPersonCamera : MonoBehaviour
     [Tooltip("How far the view may swing to either side of a straight rear view. Further horizontal look turns the character.")]
     public float maxYawFromBehind = 135f;
     [Tooltip("How far the view shifts onto the character's right while the pistol pose is fully in")]
-    public float pistolShoulderOffset = 0.55f;
+    public float pistolShoulderOffset = 0.85f;
+    [Tooltip("How fast firing kick eases back out, in 1/seconds")]
+    public float recoilRecovery = 9f;
 
     [Header("Smoothing")]
     public float smoothTime = 0.12f;
@@ -34,8 +36,10 @@ public class ThirdPersonCamera : MonoBehaviour
     public LayerMask collisionMask = -1;
 
     private float currentYaw = 0f;
-    private float currentPitch = 25f; 
-    private Vector3 currentVelocity = Vector3.zero; // Veya Vector3.zero
+    private float currentPitch = 25f;
+    private float recoilPitch;
+    private float recoilYaw;
+    private Vector3 currentVelocity = Vector3.zero;
     private Vector2 lookInput;
     private InputAction lookAction;
     private PlayerController player;
@@ -101,37 +105,37 @@ public class ThirdPersonCamera : MonoBehaviour
         float yawDelta = lookInput.x * rotationSpeed * 0.02f;
         currentPitch -= lookInput.y * rotationSpeed * 0.02f;
         currentPitch = Mathf.Clamp(currentPitch, minVerticalAngle, maxVerticalAngle);
+
         ApplyYawLimit(yawDelta);
 
-        // Fare girdisini işledikten hemen sonra sıfırlıyoruz ki durduğunda kamera kaymasın
-        // (Eğer OnLook kullanıyorsanız ve bu satır girdiyi kesiyorsa silebilirsiniz, ancak Update tabanlı okuma için önemlidir)
-        // lookInput = Vector2.zero; 
+        float recoilBlend = 1f - Mathf.Exp(-Mathf.Max(0.01f, recoilRecovery) * Time.deltaTime);
+        recoilPitch = Mathf.Lerp(recoilPitch, 0f, recoilBlend);
+        recoilYaw = Mathf.Lerp(recoilYaw, 0f, recoilBlend);
 
-        // Hedef rotasyon ve pozisyon
-        Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
-        Vector3 targetFocusPosition = target.position + Vector3.up * height + PistolShoulderShift();
-        
-        // Kamera ideal pozisyonu
-        Vector3 desiredPosition = targetFocusPosition - (rotation * Vector3.forward * distance);
+        // Positive pitch looks down. Recoil subtracts so a shot kicks the view up.
+        float pitched = Mathf.Clamp(currentPitch - recoilPitch, minVerticalAngle, maxVerticalAngle);
+        Quaternion orbit = Quaternion.Euler(pitched, currentYaw + recoilYaw, 0f);
 
-        // Kamera Çarpışma Kontrolü (Camera Collision)
-        float targetDistance = distance;
-        Vector3 directionToCamera = (desiredPosition - targetFocusPosition).normalized;
+        // The pistol keeps this same orbit and only slides it onto the character's right.
+        // The look point takes a third of that slide, so the back sits left of center.
+        Vector3 shift = ShoulderShift(pistolShoulderOffset * PistolPose());
+        Vector3 pivot = target.position + Vector3.up * height + shift;
+        Vector3 desiredPosition = pivot - (orbit * Vector3.forward * distance);
+        desiredPosition = PushOutOfWalls(pivot, desiredPosition, distance);
 
-        if (Physics.SphereCast(targetFocusPosition, collisionRadius, directionToCamera, out RaycastHit hit, distance, collisionMask, QueryTriggerInteraction.Ignore))
-        {
-            targetDistance = Mathf.Clamp(hit.distance - 0.2f, 0.5f, distance);
-            desiredPosition = targetFocusPosition + (directionToCamera * targetDistance);
-        }
-
-        // Yumuşak geçiş (SmoothDamp)
         transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
 
-        // Kameranın hedefe bakması. The shoulder shift keeps the player left of the crosshair.
-        transform.LookAt(target.position + Vector3.up * 1.5f + PistolShoulderShift());
+        Vector3 lookAtCharacter = target.position + Vector3.up * 1.5f + shift * (1f / 3f);
+        transform.LookAt(lookAtCharacter);
     }
 
-    private Vector3 PistolShoulderShift()
+    public void AddRecoil(float pitchDegrees, float yawDegrees)
+    {
+        recoilPitch = Mathf.Clamp(recoilPitch + pitchDegrees, 0f, 7f);
+        recoilYaw = Mathf.Clamp(recoilYaw + yawDegrees, -3.5f, 3.5f);
+    }
+
+    private float PistolPose()
     {
         if (heldItems == null)
         {
@@ -141,11 +145,15 @@ public class ThirdPersonCamera : MonoBehaviour
                 heldItems = player.GetComponent<HeldItemVisual>();
         }
 
-        if (heldItems == null || pistolShoulderOffset <= 0f)
-            return Vector3.zero;
+        if (heldItems == null)
+            return 0f;
 
-        float weight = heldItems.PistolPoseWeight;
-        if (weight <= 0.001f)
+        return Mathf.Clamp01(heldItems.PistolPoseWeight);
+    }
+
+    private Vector3 ShoulderShift(float meters)
+    {
+        if (Mathf.Abs(meters) < 0.001f)
             return Vector3.zero;
 
         Transform body = player != null ? player.transform : target;
@@ -153,7 +161,40 @@ public class ThirdPersonCamera : MonoBehaviour
         if (right.sqrMagnitude < 0.0001f)
             return Vector3.zero;
 
-        return right.normalized * (pistolShoulderOffset * weight);
+        return right.normalized * meters;
+    }
+
+    private Vector3 PushOutOfWalls(Vector3 pivot, Vector3 desiredPosition, float camDistance)
+    {
+        Vector3 offset = desiredPosition - pivot;
+        float dist = offset.magnitude;
+        if (dist < 0.001f)
+            return desiredPosition;
+
+        Vector3 direction = offset / dist;
+        RaycastHit[] hits = Physics.SphereCastAll(pivot, collisionRadius, direction, dist, collisionMask, QueryTriggerInteraction.Ignore);
+        float nearest = dist;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform hitTransform = hits[i].transform;
+            if (hitTransform == null || IsPlayer(hitTransform))
+                continue;
+            if (hits[i].distance < nearest)
+                nearest = hits[i].distance;
+        }
+
+        if (nearest >= dist - 0.001f)
+            return desiredPosition;
+
+        float pulled = Mathf.Clamp(nearest - 0.2f, 0.45f, camDistance);
+        return pivot + direction * pulled;
+    }
+
+    private bool IsPlayer(Transform hitTransform)
+    {
+        if (player == null)
+            return false;
+        return hitTransform == player.transform || hitTransform.IsChildOf(player.transform);
     }
 
     private void ApplyYawLimit(float yawDelta)
@@ -180,6 +221,14 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             currentYaw = characterYaw + clamped;
             return;
+        }
+
+        // When the mouse is still, ease the body back inside the window instead of snapping.
+        if (Mathf.Abs(yawDelta) < 0.02f)
+        {
+            float maxStep = 100f * Time.deltaTime;
+            excess = Mathf.Clamp(excess, -maxStep, maxStep);
+            clamped = next - excess;
         }
 
         if (Mathf.Abs(excess) < 0.01f)

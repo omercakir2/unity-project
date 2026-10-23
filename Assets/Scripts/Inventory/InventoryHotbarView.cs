@@ -81,8 +81,7 @@ public class InventoryHotbarView : MonoBehaviour
 
         if (crosshair != null)
         {
-            bool showCrosshair = inventory.ActiveItemId == PlayerInventory.SearchlightItemId
-                || inventory.ActiveItemId == PlayerInventory.PistolItemId;
+            bool showCrosshair = inventory.ActiveItemId == PlayerInventory.PistolItemId;
             if (crosshair.activeSelf != showCrosshair)
                 crosshair.SetActive(showCrosshair);
         }

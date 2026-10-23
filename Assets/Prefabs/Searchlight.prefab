@@ -99,7 +99,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 162581270814824425}
-  - component: {fileID: 4278295392052210420}
   m_Layer: 0
   m_Name: Searchlight
   m_TagString: Untagged
@@ -123,20 +122,6 @@ Transform:
   - {fileID: 2069729275660259174}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4278295392052210420
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5823359753970736860}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cba3c46b575474f07990d3d4955aa6da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SearchlightAim
-  lamp: {fileID: 2069729275660259174}
-  maxDistance: 40
 --- !u!1 &5903959787193131566
 GameObject:
   m_ObjectHideFlags: 0
@@ -363,7 +348,7 @@ GameObject:
   - component: {fileID: 2771470895107900771}
   - component: {fileID: 3912336198186161092}
   m_Layer: 0
-  m_Name: Beam
+  m_Name: Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -378,7 +363,7 @@ Transform:
   m_GameObject: {fileID: 8927744900765843000}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.2}
+  m_LocalPosition: {x: 0, y: 0, z: 0.18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -393,10 +378,10 @@ Light:
   m_GameObject: {fileID: 8927744900765843000}
   m_Enabled: 1
   serializedVersion: 13
-  m_Type: 0
-  m_Color: {r: 0.78, g: 0.9, b: 1, a: 1}
-  m_Intensity: 18
-  m_Range: 28
+  m_Type: 2
+  m_Color: {r: 0.82, g: 0.9, b: 1, a: 1}
+  m_Intensity: 6
+  m_Range: 8
   m_SpotAngle: 34
   m_InnerSpotAngle: 18
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -404,7 +389,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 0.65
+    m_Strength: 0.45
     m_Bias: 0.05
     m_NormalBias: 0.4
     m_NearPlane: 0.2

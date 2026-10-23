@@ -9,15 +9,17 @@
     --ink: #1c1915;
     --muted: #5c564c;
     --line: #ddd4c4;
-    --paper: #f6f1e7;
+    --paper: #f3eee4;
     --card: #fffdf8;
     --green: #1f6b4a;
     --green-soft: #e5f2eb;
     --amber: #8a4b12;
     --amber-soft: #f8ead7;
+    --gold: #e0a020;
     --blue: #1d4e89;
     --blue-soft: #e7f0f8;
     --red: #8d2f2f;
+    --red-soft: #f8e4e2;
     --shadow: 0 1px 0 rgba(28, 25, 21, 0.04);
   }
   * { box-sizing: border-box; }
@@ -25,13 +27,15 @@
   body {
     margin: 0;
     color: var(--ink);
-    background: var(--paper);
-    font: 17px/1.55 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+    background:
+      radial-gradient(1200px 500px at 10% -10%, #fff8ec 0%, transparent 55%),
+      var(--paper);
+    font: 17px/1.5 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
   }
   a { color: var(--green); }
-  code, .path {
+  code, .path, .mono {
     font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.86em;
+    font-size: 0.84em;
   }
   code {
     background: #efe7d8;
@@ -39,353 +43,919 @@
     border-radius: 4px;
   }
   header.top {
-    background: #1c1915;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.04), transparent 40%),
+      #1c1915;
     color: #f6f1e7;
-    padding: 2.4rem 1.5rem 2rem;
+    padding: 2.6rem 1.5rem 2.1rem;
   }
+  header.top .wrap { max-width: 1180px; margin: 0 auto; }
   header.top h1 {
-    margin: 0 0 0.4rem;
-    font-size: 2.1rem;
+    margin: 0 0 0.45rem;
+    font-size: 2.35rem;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
-  header.top p { margin: 0.2rem 0; max-width: 44rem; color: #e4d8c4; }
-  header.top .meta { margin-top: 1rem; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; color: #b7aa96; }
+  header.top p { margin: 0.25rem 0; max-width: 46rem; color: #e4d8c4; }
+  header.top .meta {
+    margin-top: 1.1rem;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    color: #b7aa96;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 1.15rem; }
+  .chip {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+    padding: 0.28rem 0.65rem;
+    border: 1px solid rgba(246, 241, 231, 0.2);
+    color: #f6f1e7;
+  }
+  .chip.g { background: #1f6b4a; border-color: #1f6b4a; }
+  .chip.a { background: #8a4b12; border-color: #8a4b12; }
+  .chip.b { background: #1d4e89; border-color: #1d4e89; }
   .layout {
     display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 2rem;
-    max-width: 1100px;
+    grid-template-columns: 210px 1fr;
+    gap: 1.8rem;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 1.6rem 1.4rem 4rem;
+    padding: 1.5rem 1.3rem 3.5rem;
   }
   nav {
     position: sticky;
     top: 1rem;
     align-self: start;
     font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    line-height: 1.45;
+    font-size: 0.72rem;
+    line-height: 1.35;
   }
   nav a {
     display: block;
     color: var(--muted);
     text-decoration: none;
-    padding: 0.22rem 0;
+    padding: 0.28rem 0 0.28rem 0.7rem;
+    border-left: 2px solid transparent;
   }
-  nav a:hover { color: var(--ink); }
+  nav a:hover { color: var(--ink); border-left-color: var(--line); }
   main h2 {
-    margin: 2.2rem 0 0.6rem;
-    font-size: 1.55rem;
-    letter-spacing: -0.02em;
+    margin: 2.4rem 0 0.45rem;
+    font-size: 1.6rem;
+    letter-spacing: -0.025em;
   }
-  main h3 { margin: 1.4rem 0 0.4rem; font-size: 1.15rem; }
-  main p { margin: 0.55rem 0; }
-  .lead { font-size: 1.12rem; }
-  .card, .callout, table, .flow, .tree, .states {
+  main h2:first-child { margin-top: 0.2rem; }
+  main h3 { margin: 1.15rem 0 0.35rem; font-size: 1.08rem; }
+  main p { margin: 0.45rem 0 0.7rem; }
+  .lead { font-size: 1.12rem; max-width: 44rem; }
+  .card, .panel, table, .figure {
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: var(--shadow);
   }
-  .card { padding: 1rem 1.1rem; margin: 0.8rem 0; }
-  .callout { padding: 0.85rem 1rem; margin: 0.9rem 0; background: var(--amber-soft); border-color: #e4cba8; }
+  .panel { padding: 1rem 1.05rem 1.1rem; margin: 0.8rem 0 1rem; overflow-x: auto; }
+  .panel svg { display: block; width: 100%; height: auto; }
+  .caption {
+    margin: 0.55rem 0 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin: 0.7rem 0 1rem;
+  }
+  .card { padding: 0.9rem 1rem; }
+  .card h3 { margin: 0 0 0.25rem; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.96rem; }
+  .card .k {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 0.25rem;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 0.7rem 0 1rem; overflow: hidden; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: #faf6ee;
+  }
+  tr:last-child td { border-bottom: 0; }
+  .stage {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 0.75rem;
     margin: 0.8rem 0 1rem;
   }
-  .grid .card h3 { margin-top: 0; }
-  .grid .card p { margin: 0.3rem 0 0; color: var(--muted); }
-  table { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1rem; overflow: hidden; }
-  th, td { text-align: left; padding: 0.55rem 0.75rem; vertical-align: top; border-bottom: 1px solid var(--line); }
-  th { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: #faf6ee; }
-  tr:last-child td { border-bottom: 0; }
-  .flow { padding: 1rem; margin: 0.8rem 0 1rem; overflow-x: auto; }
-  .flow svg { display: block; min-width: 640px; width: 100%; height: auto; }
-  .tree { padding: 1rem 1.15rem; margin: 0.8rem 0; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.55; white-space: pre; overflow-x: auto; }
-  .states { padding: 1rem; margin: 0.8rem 0; }
-  .row { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
-  .pill {
-    border-radius: 999px;
-    padding: 0.35rem 0.7rem;
+  .shot {
+    margin: 0;
+    background: linear-gradient(#8eb4d4, #d7c3a4 62%, #c9b59a);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #c9bba6;
+  }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot figcaption {
+    background: #1c1915;
+    color: #e4d8c4;
     font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+    padding: 0.45rem 0.7rem;
+  }
+  .screen {
+    background: linear-gradient(#7ea6c8, #d9c7ab 70%);
+    border-radius: 14px;
+    border: 1px solid #c9bba6;
+    min-height: 280px;
+    position: relative;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .hud {
+    width: min(100%, 340px);
+    color: #fff;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+  }
+  .hud-row {
+    display: grid;
+    grid-template-columns: 62px 1fr 36px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .track {
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(12, 10, 8, 0.72);
+    border: 2px solid #1a1612;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .fill { height: 100%; border-radius: inherit; }
+  .fill.health { width: 100%; background: linear-gradient(#6dce78, #3caf55); }
+  .fill.energy { width: 72%; background: linear-gradient(#f0c14d, #e09a1a); }
+  .fill.low { width: 16%; background: linear-gradient(#e25a52, #c4312c); }
+  .hotbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(20, 16, 12, 0.28);
+    border-radius: 10px;
+  }
+  .slot {
+    width: 58px;
+    height: 58px;
+    border-radius: 8px;
+    border: 3px solid rgba(255,255,255,0.16);
+    background: rgba(20, 16, 12, 0.55);
+    position: relative;
+    color: #fff;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11px;
+  }
+  .slot.on {
+    border-color: #ffb847;
+    background: rgba(40, 28, 16, 0.82);
+    box-shadow: 0 0 0 1px rgba(255, 184, 71, 0.35);
+  }
+  .slot .n { position: absolute; left: 5px; top: 3px; opacity: 0.9; }
+  .slot .glyph { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); }
+  .torch-glyph {
+    width: 8px; height: 28px; border-radius: 2px;
+    background: linear-gradient(#f27a22, #f27a22 30%, #6b3a18 30%);
+    box-shadow: 0 -8px 10px #ffb25a;
+  }
+  .lamp-glyph {
+    width: 22px; height: 12px; border-radius: 3px 8px 8px 3px;
+    background: linear-gradient(90deg, #222 40%, #d7e7ff 40%);
+    box-shadow: 8px 0 10px rgba(180, 210, 255, 0.7);
+  }
+  .cross {
+    position: absolute;
+    left: 50%; top: 42%;
+    width: 12px; height: 12px;
+    transform: translate(-50%, -50%);
+  }
+  .cross::before, .cross::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.45);
+  }
+  .cross::before { left: 5px; top: 0; width: 2px; height: 12px; }
+  .cross::after { left: 0; top: 5px; width: 12px; height: 2px; }
+  .keys { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 0.2rem; }
+  kbd {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    background: #fff;
     border: 1px solid var(--line);
+    border-bottom-width: 3px;
+    border-radius: 7px;
+    padding: 0.18rem 0.45rem;
+    color: var(--ink);
+  }
+  .keyrow { display: flex; gap: 0.55rem; align-items: center; margin: 0.35rem 0; font-size: 0.95rem; }
+  .keyrow span { color: var(--muted); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .mini {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
     background: #fff;
   }
-  .pill.locomotion { background: var(--blue-soft); border-color: #c5d7ea; }
-  .pill.action { background: var(--amber-soft); border-color: #e4cba8; }
-  .pill.stairs { background: var(--green-soft); border-color: #b7d8c6; }
-  .arrow { color: var(--muted); font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
-  ol.steps { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; }
-  ol.steps li { margin: 0.35rem 0; }
+  .mini h3 { margin-top: 0; }
+  .rate {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.28rem 0;
+    border-bottom: 1px dashed #eadfce;
+    font-size: 0.95rem;
+  }
+  .rate:last-child { border-bottom: 0; }
+  .rate b { font-weight: 600; }
+  .good { color: var(--green); }
+  .bad { color: var(--red); }
+  .warn { color: var(--amber); }
+  .plane {
+    display: grid;
+    grid-template-columns: 72px 1fr 1fr 1fr;
+    grid-template-rows: auto 1fr 1fr;
+    gap: 6px;
+    min-width: 520px;
+  }
+  .plane .axis {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    padding-bottom: 4px;
+  }
+  .plane .ylab {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    align-items: center;
+    justify-content: center;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .cell {
+    border-radius: 10px;
+    min-height: 86px;
+    padding: 0.65rem 0.7rem;
+    border: 1px solid var(--line);
+    background: var(--blue-soft);
+  }
+  .cell strong { display: block; font-size: 0.98rem; }
+  .cell em { display: block; margin-top: 0.2rem; color: var(--muted); font-style: normal; font-size: 0.82rem; }
+  .cell.tired { background: var(--amber-soft); border-color: #e4cba8; }
+  .cell.same { background: #f7f4ee; }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.7rem 1rem; margin-top: 0.7rem; color: var(--muted); font-size: 0.9rem; }
+  .sw { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: -1px; border: 1px solid rgba(0,0,0,0.08); }
+  .callout {
+    background: var(--amber-soft);
+    border: 1px solid #e4cba8;
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    margin: 0.7rem 0 1rem;
+  }
+  .tree {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 0;
+  }
   footer {
-    max-width: 1100px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 0 1.4rem 2.5rem;
+    padding: 0 1.3rem 2.6rem;
     color: var(--muted);
     font-size: 0.9rem;
   }
-  @media (max-width: 800px) {
-    .layout { grid-template-columns: 1fr; }
-    nav { position: static; display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+  @media (max-width: 860px) {
+    .layout, .stage, .split { grid-template-columns: 1fr; }
+    nav { position: static; display: flex; flex-wrap: wrap; gap: 0.15rem 0.7rem; }
+    nav a { border-left: 0; padding-left: 0; }
+    header.top h1 { font-size: 1.7rem; }
   }
 </style>
 </head>
 <body>
 <header class="top">
-  <h1>How this project fits together</h1>
-  <p>A map for someone opening the Unity project for the first time. It covers the character, the camera, the animations, and the scenes those systems live in.</p>
-  <p class="meta">Unity 6000.6.5f1 · Universal Render Pipeline · Input System · open this file in a browser</p>
+  <div class="wrap">
+    <h1>How this project fits together</h1>
+    <p>A picture of the third-person character: the capsule that moves, the humanoid that poses, the energy that makes him slump, and the torch or searchlight in his left hand.</p>
+    <div class="chips">
+      <span class="chip g">Health + energy</span>
+      <span class="chip a">Tired idle under 20% energy</span>
+      <span class="chip b">Hotbar: torch and searchlight</span>
+      <span class="chip">Swappable humanoid</span>
+    </div>
+    <p class="meta">Unity 6000.6.5f1 · URP · Input System · updated 2026-10-20 · open this file in a browser</p>
+  </div>
 </header>
 
 <div class="layout">
 <nav>
-  <a href="#shape">The shape</a>
+  <a href="#map">Map</a>
+  <a href="#see">What you see</a>
   <a href="#frame">One frame</a>
-  <a href="#folders">Folders</a>
   <a href="#player">Player</a>
-  <a href="#input">Input</a>
-  <a href="#jump">Jump, climb, drop</a>
+  <a href="#input">Hands on keys</a>
+  <a href="#vitals">Vitals</a>
+  <a href="#tired">Tired pose</a>
+  <a href="#items">Torch and light</a>
+  <a href="#jump">Space</a>
   <a href="#stairs">Stairs</a>
   <a href="#animator">Animator</a>
   <a href="#camera">Camera</a>
-  <a href="#world">World and scenes</a>
-  <a href="#edit">Where to change things</a>
-  <a href="#team">Working together</a>
+  <a href="#world">World</a>
+  <a href="#edit">Where to change</a>
 </nav>
 
 <main>
-  <h2 id="shape">The shape</h2>
-  <p class="lead">This is a third-person character in a low-poly forest. The capsule moves. The mesh only poses. Root motion stays off, so animation never teleports the player.</p>
-  <div class="grid">
-    <div class="card">
-      <h3>Playable character</h3>
-      <p><span class="path">Assets/Prefabs/Player.prefab</span> holds the controller, the input, and the Remy mesh.</p>
-    </div>
-    <div class="card">
-      <h3>Brain</h3>
-      <p><span class="path">PlayerController.cs</span> reads input, moves the capsule, and decides jump, climb, drop, or stairs.</p>
-    </div>
-    <div class="card">
-      <h3>Body</h3>
-      <p>The Animator on the Remy child plays Mixamo clips. <span class="path">MaleAnimator.controller</span> chooses which clip.</p>
-    </div>
-    <div class="card">
-      <h3>Eyes</h3>
-      <p><span class="path">ThirdPersonCamera.cs</span> orbits <span class="path">CameraTarget</span> and movement is relative to that view.</p>
-    </div>
-  </div>
-
-  <h2 id="frame">One frame</h2>
-  <p>Input arrives through the Input System. Movement happens in <code>Update</code>. Pose correction for climbs and stairs happens in <code>LateUpdate</code>, after the Animator has produced a pose. The camera runs in its own <code>LateUpdate</code> and follows the player.</p>
-  <div class="flow" aria-label="Frame loop">
-    <svg viewBox="0 0 760 168" role="img">
-      <title>From input to camera in one frame</title>
+  <h2 id="map">Map</h2>
+  <p class="lead">The prefab root is the gameplay object. The mesh only poses. Root motion stays off, so a clip never teleports the capsule.</p>
+  <div class="panel" aria-label="System map">
+    <svg viewBox="0 0 920 430" role="img">
+      <title>From keys to the picture on screen</title>
       <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#5c564c"/>
+        <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#5c564c"/>
         </marker>
       </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="14" fill="#1c1915">
+        <rect x="16" y="24" width="170" height="118" rx="12" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="101" y="50" text-anchor="middle" font-weight="600">Keys</text>
+        <text x="101" y="74" text-anchor="middle" fill="#5c564c" font-size="12">WASD · Shift · Space</text>
+        <text x="101" y="94" text-anchor="middle" fill="#5c564c" font-size="12">Mouse · 1–4 · Scroll</text>
+        <text x="101" y="120" text-anchor="middle" fill="#1d4e89" font-size="12">PlayerInput</text>
+
+        <rect x="230" y="24" width="210" height="150" rx="12" fill="#fff" stroke="#ddd4c4"/>
+        <text x="335" y="50" text-anchor="middle" font-weight="600">PlayerController</text>
+        <text x="335" y="76" text-anchor="middle" fill="#5c564c" font-size="12">moves the capsule</text>
+        <text x="335" y="96" text-anchor="middle" fill="#5c564c" font-size="12">picks jump, climb, drop</text>
+        <text x="335" y="116" text-anchor="middle" fill="#5c564c" font-size="12">writes Speed and Tired</text>
+        <text x="335" y="148" text-anchor="middle" fill="#8a4b12" font-size="12">asks vitals before sprint</text>
+
+        <rect x="484" y="24" width="196" height="118" rx="12" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="582" y="50" text-anchor="middle" font-weight="600">MaleAnimator</text>
+        <text x="582" y="76" text-anchor="middle" fill="#5c564c" font-size="12">Base · body and feet</text>
+        <text x="582" y="96" text-anchor="middle" fill="#5c564c" font-size="12">Hold · torch arms</text>
+        <text x="582" y="120" text-anchor="middle" fill="#1f6b4a" font-size="12">IK pass on</text>
+
+        <rect x="720" y="24" width="184" height="118" rx="12" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="812" y="50" text-anchor="middle" font-weight="600">Late pose</text>
+        <text x="812" y="76" text-anchor="middle" fill="#5c564c" font-size="12">stair feet on treads</text>
+        <text x="812" y="96" text-anchor="middle" fill="#5c564c" font-size="12">searchlight aim</text>
+        <text x="812" y="120" text-anchor="middle" fill="#8a4b12" font-size="12">camera orbit</text>
+
+        <rect x="230" y="214" width="210" height="186" rx="12" fill="#f8e4e2" stroke="#e4c4c0"/>
+        <text x="335" y="242" text-anchor="middle" font-weight="600">PlayerVitals</text>
+        <text x="335" y="270" text-anchor="middle" fill="#5c564c" font-size="12">sprint drains energy</text>
+        <text x="335" y="290" text-anchor="middle" fill="#5c564c" font-size="12">jump spends 20–25</text>
+        <text x="335" y="310" text-anchor="middle" fill="#5c564c" font-size="12">under 20% → tired</text>
+        <text x="335" y="338" text-anchor="middle" fill="#8d2f2f" font-size="12">0 health freezes time</text>
+        <text x="335" y="372" text-anchor="middle" fill="#5c564c" font-size="12">HUD listens to Changed</text>
+
+        <rect x="484" y="214" width="196" height="186" rx="12" fill="#fff" stroke="#ddd4c4"/>
+        <text x="582" y="242" text-anchor="middle" font-weight="600">Left hand</text>
+        <text x="582" y="270" text-anchor="middle" fill="#5c564c" font-size="12">slot 1 · torch</text>
+        <text x="582" y="290" text-anchor="middle" fill="#5c564c" font-size="12">Hold layer + mask</text>
+        <text x="582" y="318" text-anchor="middle" fill="#5c564c" font-size="12">slot 2 · searchlight</text>
+        <text x="582" y="338" text-anchor="middle" fill="#5c564c" font-size="12">IK arm + lamp</text>
+        <text x="582" y="372" text-anchor="middle" fill="#1d4e89" font-size="12">slot 3 · pistol clips</text>
+
+        <rect x="720" y="250" width="184" height="114" rx="12" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="812" y="280" text-anchor="middle" font-weight="600">Screen</text>
+        <text x="812" y="306" text-anchor="middle" fill="#5c564c" font-size="12">bars, top left</text>
+        <text x="812" y="326" text-anchor="middle" fill="#5c564c" font-size="12">hotbar, bottom</text>
+        <text x="812" y="346" text-anchor="middle" fill="#5c564c" font-size="12">crosshair with light</text>
+
+        <line x1="186" y1="80" x2="226" y2="80" stroke="#5c564c" marker-end="url(#arr)"/>
+        <line x1="440" y1="80" x2="480" y2="80" stroke="#5c564c" marker-end="url(#arr)"/>
+        <line x1="680" y1="80" x2="716" y2="80" stroke="#5c564c" marker-end="url(#arr)"/>
+        <line x1="335" y1="174" x2="335" y2="210" stroke="#5c564c" marker-end="url(#arr)"/>
+        <line x1="440" y1="300" x2="480" y2="300" stroke="#5c564c" marker-end="url(#arr)"/>
+        <line x1="680" y1="300" x2="716" y2="300" stroke="#5c564c" marker-end="url(#arr)"/>
+      </g>
+    </svg>
+    <p class="caption">Solid arrows are the play loop. Vitals sit beside movement and refuse sprint or jump when energy is low. The hold layer and the searchlight IK both write the left arm, and only one of them is active.</p>
+  </div>
+
+  <h2 id="see">What you see</h2>
+  <p>SampleScene in play. The bars live on the player. The hotbar is four slots. Slot 1 starts selected.</p>
+  <div class="stage">
+    <figure class="shot">
+      <img src="../Assets/Screenshots/tired-idle.png" alt="Character from behind, torch in the left hand, health and energy bars full, hotbar with the torch slot selected.">
+      <figcaption>Full energy · upright idle · torch equipped</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="../Assets/Screenshots/tired-idle-side.png" alt="Character slumped forward in the tired idle, torch still in hand, energy bar nearly empty.">
+      <figcaption>Energy under 20% · Tired blends to the slumped idle</figcaption>
+    </figure>
+  </div>
+
+  <div class="screen" aria-label="HUD and hotbar layout">
+    <div class="hud">
+      <div class="hud-row"><span>Health</span><div class="track"><div class="fill health"></div></div><span>100</span></div>
+      <div class="hud-row"><span>Energy</span><div class="track"><div class="fill energy"></div></div><span>72</span></div>
+      <div class="hud-row"><span></span><div class="track"><div class="fill low"></div></div><span>16</span></div>
+    </div>
+    <div class="cross" title="Shown only while the searchlight is selected"></div>
+    <div class="hotbar">
+      <div class="slot on"><span class="n">1</span><span class="glyph"><i class="torch-glyph"></i></span></div>
+      <div class="slot"><span class="n">2</span><span class="glyph"><i class="lamp-glyph"></i></span></div>
+      <div class="slot"><span class="n">3</span></div>
+      <div class="slot"><span class="n">4</span></div>
+    </div>
+  </div>
+  <p class="caption">The middle energy row is the low state: under 20 the fill turns red, sprint and jump lock, and the idle slumps. The crosshair is drawn here so you can see where it sits. In play it appears only on slot 2. The number on a bar is the current pool, rounded up.</p>
+
+  <h2 id="frame">One frame</h2>
+  <div class="panel" aria-label="Frame order">
+    <svg viewBox="0 0 920 250" role="img">
+      <title>Order of work in one frame</title>
       <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
-        <rect x="8" y="18" width="140" height="58" rx="10" fill="#e7f0f8" stroke="#c5d7ea"/>
-        <text x="78" y="42" text-anchor="middle">PlayerInput</text>
-        <text x="78" y="60" text-anchor="middle" fill="#5c564c" font-size="11">Move, Jump, Look</text>
-        <rect x="188" y="18" width="170" height="58" rx="10" fill="#fff" stroke="#ddd4c4"/>
-        <text x="273" y="42" text-anchor="middle">Update</text>
-        <text x="273" y="60" text-anchor="middle" fill="#5c564c" font-size="11">move, gravity, triggers</text>
-        <rect x="398" y="18" width="160" height="58" rx="10" fill="#e5f2eb" stroke="#b7d8c6"/>
-        <text x="478" y="42" text-anchor="middle">Animator</text>
-        <text x="478" y="60" text-anchor="middle" fill="#5c564c" font-size="11">pose on Remy</text>
-        <rect x="598" y="18" width="150" height="58" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
-        <text x="673" y="42" text-anchor="middle">LateUpdate</text>
-        <text x="673" y="60" text-anchor="middle" fill="#5c564c" font-size="11">climb warp, stair phase</text>
-        <rect x="250" y="108" width="250" height="46" rx="10" fill="#fff" stroke="#ddd4c4"/>
-        <text x="375" y="136" text-anchor="middle">ThirdPersonCamera follows CameraTarget</text>
-        <line x1="148" y1="47" x2="184" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
-        <line x1="358" y1="47" x2="394" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
-        <line x1="558" y1="47" x2="594" y2="47" stroke="#5c564c" marker-end="url(#arrow)"/>
+        <text x="16" y="28" fill="#5c564c" font-size="12">time →</text>
+        <rect x="16" y="44" width="150" height="54" rx="10" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="91" y="66" text-anchor="middle">Input events</text>
+        <text x="91" y="84" text-anchor="middle" fill="#5c564c" font-size="11">move, look, hotbar</text>
+
+        <rect x="182" y="44" width="168" height="54" rx="10" fill="#fff" stroke="#ddd4c4"/>
+        <text x="266" y="66" text-anchor="middle">Controller Update</text>
+        <text x="266" y="84" text-anchor="middle" fill="#5c564c" font-size="11">move, then set Tired</text>
+
+        <rect x="366" y="44" width="150" height="54" rx="10" fill="#f8e4e2" stroke="#e4c4c0"/>
+        <text x="441" y="66" text-anchor="middle">Vitals · order 50</text>
+        <text x="441" y="84" text-anchor="middle" fill="#5c564c" font-size="11">drain or regen</text>
+
+        <rect x="532" y="44" width="168" height="54" rx="10" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="616" y="66" text-anchor="middle">Animator + IK</text>
+        <text x="616" y="84" text-anchor="middle" fill="#5c564c" font-size="11">pose, then feet / arm</text>
+
+        <rect x="716" y="44" width="184" height="54" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="808" y="66" text-anchor="middle">LateUpdate</text>
+        <text x="808" y="84" text-anchor="middle" fill="#5c564c" font-size="11">warp, lamp, camera</text>
+
+        <rect x="16" y="132" width="884" height="92" rx="12" fill="#faf6ee" stroke="#ddd4c4"/>
+        <text x="36" y="158" font-weight="600">Who owns the transform</text>
+        <text x="36" y="182" fill="#5c564c">Locomotion uses CharacterController.Move only.</text>
+        <text x="36" y="202" fill="#5c564c">Climb and jump-down disable the controller, move the transform, then turn it back on.</text>
       </g>
     </svg>
   </div>
-  <p><code>CharacterController.Move</code> is the only thing that changes the player's position during normal locomotion. Climb and jump-down turn the controller off and move the transform directly, then turn it back on when the action ends.</p>
-
-  <h2 id="folders">Folders</h2>
-  <div class="tree">Assets/
-  Scripts/                  runtime gameplay
-    PlayerController.cs     movement, jump, climb, stairs
-    StairFootIk.cs          sole-on-tread callback
-    ThirdPersonCamera.cs    orbit camera used in game
-    CameraFollow.cs         older follow script, not used by a scene
-    TorchFlicker.cs         night-scene flame
-  AnimatorControllers/
-    MaleAnimator.controller locomotion and traversal states
-  Input/
-    PlayerInputActions.inputactions
-  Prefabs/
-    Player.prefab
-    Main Camera.prefab
-    Torch.prefab
-  Models/
-    Characters/LowPolyMale/ male mesh, Remy mesh, Mixamo clips
-    Pure Poly/              forest pack used by the terrain tools
-    Forest/  Structures/    extra props
-  Scenes/
-    SampleScene.unity       stairs, climb box, ledge — the traversal test
-    Demo_01.unity           forest demo
-    Demo_01_Night.unity     same forest with a torch
-  Editor/                   menu tools, not in a build
-  Materials/  Settings/     URP materials and renderer assets
-ProjectSettings/            tags, physics, quality
-docs/architecture.html      this page</div>
+  <p><code>PlayerAvatar</code> runs at execution order −50 so the humanoid is bound before the controller caches bones. <code>PlayerVitals</code> runs at 50, after movement has decided whether this frame is a sprint.</p>
 
   <h2 id="player">Player</h2>
-  <p>The prefab root is the gameplay object. The visible person is a child.</p>
-  <table>
-    <thead><tr><th>Object</th><th>What is on it</th><th>Job</th></tr></thead>
-    <tbody>
-      <tr><td>Player</td><td><code>CharacterController</code>, <code>PlayerController</code>, <code>PlayerInput</code></td><td>Capsule, rules, and input binding</td></tr>
-      <tr><td>Remy</td><td><code>Animator</code> using MaleAnimator, humanoid, scale 0.5</td><td>The mesh. Local position is about <code>(0, -1.2, 0)</code> so the feet meet the capsule bottom.</td></tr>
-      <tr><td>CameraTarget</td><td>empty transform</td><td>The point the camera orbits. It is not the capsule center.</td></tr>
-      <tr><td>StairFootIk</td><td>added in <code>Awake</code> / <code>LateUpdate</code> if missing</td><td>Receives <code>OnAnimatorIK</code>. That callback only runs on the same object as the Animator, which is why it is a separate script.</td></tr>
-    </tbody>
-  </table>
-  <div class="callout">Root motion is forced off. If a new clip seems to slide the character, check <code>applyRootMotion</code> before changing speeds. The controller will fight a clip that also tries to move the transform.</div>
-  <p>Walk speed is 5 and sprint speed is 8, in meters per second. Gravity in the script defaults to -40. The prefab YAML still stores an older gravity of -25, and newer climb and stair fields are not written on the prefab yet, so those use the script defaults until Unity reserializes the prefab.</p>
-
-  <h2 id="input">Input</h2>
-  <p>Actions live in <span class="path">Assets/Input/PlayerInputActions.inputactions</span>, map name <code>Player</code>. The Player prefab's <code>PlayerInput</code> invokes Unity Events.</p>
-  <table>
-    <thead><tr><th>Action</th><th>Default</th><th>Method</th></tr></thead>
-    <tbody>
-      <tr><td>Move</td><td>WASD</td><td><code>PlayerController.OnMove</code></td></tr>
-      <tr><td>Sprint</td><td>Shift</td><td><code>PlayerController.OnSprint</code></td></tr>
-      <tr><td>Jump</td><td>Space</td><td><code>PlayerController.OnJump</code></td></tr>
-      <tr><td>Look</td><td>Mouse delta</td><td><code>ThirdPersonCamera.OnLook</code>. The camera also reads the Look action itself.</td></tr>
-      <tr><td>Interact</td><td>E</td><td><code>OnInteract</code> exists and logs. The prefab event is not wired, so E currently does nothing in play.</td></tr>
-    </tbody>
-  </table>
-  <p>Movement is camera-relative. The stick direction is rebuilt from the camera's flattened forward and right, then the body turns toward that direction.</p>
-
-  <h2 id="jump">Jump, climb, drop</h2>
-  <p>Space always calls <code>TryPerformJump</code>. The same button picks one of three actions, in this order. The character must be grounded, and must not already be inside a climb or a drop.</p>
-  <ol class="steps">
-    <li><strong>Climb.</strong> A low forward ray or spherecast hits something, a high ray misses, and the obstacle is roughly half the capsule height to a bit more. Stairs are rejected. A wide top, like the test cube, is a mantle onto that top. A thin obstacle looks for ground on the far side.</li>
-    <li><strong>Jump down.</strong> Used when there is no climb and the player is not on stairs. A drop in front must be between about 0.45 m and 2.1 m. SampleScene's <code>Ledge</code> is the test for this.</li>
-    <li><strong>Jump.</strong> Sets upward velocity from <code>jumpHeight</code> and fires the Jump trigger.</li>
-  </ol>
-  <p>Climb plays <em>Climb Over</em> (<span class="path">Remy@Braced Hang To Crouch.fbx</span>). During the action the controller is disabled. <code>LateUpdate</code> scrubs the clip on a real-time clock and moves the body so the fingertips stay on the near top edge. After about 62% of the clip, the target blends from that lip to a stand on the landing. On the way out, the animator is forced back to the Blend Tree and the capsule is shifted so the feet sit on the landing. Without that snap, the end pose leaves the mesh floating above the capsule.</p>
-  <p>Jump down plays <em>Jump Down</em> (<span class="path">Remy@Jumping Down.fbx</span>) and moves along a short arc to the landing point. It does not use the lip hold.</p>
-
-  <h2 id="stairs">Stairs</h2>
-  <p>A stair is any collider whose transform, or a parent, has the tag <code>Stairs</code>. Uphill is that object's forward, flattened onto the ground. In SampleScene the <code>Stairs</code> object faces +Z, so walking toward +Z is up. The <code>Ledge</code> object is separate and is not tagged, so it is a jump-down, not a stair.</p>
-  <p>Contact comes from two places: a walkable hit in <code>OnControllerColliderHit</code>, and a short downward ray from the feet every frame. A hit that is not a stair does not cancel the stair. The contact timer is 0.2 seconds, so a brief gap between treads does not switch the character back to flat-ground speed.</p>
-  <h3>Speed</h3>
-  <p>On stairs the horizontal speed is <code>2 × tread spacing / clip length</code>. Spacing is measured from the step renderers, and falls back to 0.35 m. The walk-up clip is about 1.2 s, the run-up clip about 0.6 s, and the descend clip about 0.93 s. For a two-plant clip, that is one tread per footfall at the clip's own pace.</p>
-  <p>Going down, vertical speed follows the slope: horizontal speed times riser / tread. That keeps the capsule on the steps instead of walking off a nose and free-falling. Going up, the controller's step offset (0.3 m) clears the 0.2 m risers, and fall speed is capped while the stair timer is active.</p>
-  <h3>Footfalls</h3>
-  <p>The first time a stair clip is needed, the controller samples it and remembers the frames where a foot is actually lowest. Walk up and run up each have two plants, half a cycle apart. Descend only has one plant that reaches the ground, so that clip is treated as one step per cycle and therefore plays faster than its authored length.</p>
-  <p>While the matching state is fully entered, <code>LateUpdate</code> sets animator speed to 0 and scrubs normalized time from the body's distance along the stair. The plant lands on a tread center. <code>StairFootIk</code> then lowers the sole onto the surface under that foot. It does not slide the foot sideways. The phase lock owns which tread. The IK owns contact with it.</p>
-  <div class="callout">SampleScene stairs are boxes: tread 0.35 m, riser 0.20 m, eight steps, then a landing. If you build a new stair, tag the parent <code>Stairs</code>, point its forward uphill, and keep the steps as child renderers between about 0.18 m and 0.8 m deep so the spacing measurement can see them.</div>
-
-  <h2 id="animator">Animator</h2>
-  <p><span class="path">Assets/AnimatorControllers/MaleAnimator.controller</span> has one base layer. IK Pass is on, which is required for <code>StairFootIk</code>.</p>
-  <div class="states">
-    <div class="row">
-      <span class="pill locomotion">Blend Tree</span>
-      <span class="arrow">Speed 0</span>
-      <span class="pill locomotion">Breathing Idle</span>
-      <span class="arrow">0.5</span>
-      <span class="pill locomotion">Walking</span>
-      <span class="arrow">1</span>
-      <span class="pill locomotion">Slow Run</span>
+  <div class="panel">
+    <pre class="tree">Player.prefab
+├─ CharacterController     height 1.97 · radius 0.15 · step 0.30 · center y −0.29
+├─ PlayerInput             Unity Events into the methods below
+├─ PlayerController        walk 5 · sprint 8 · jump height 2.5 · gravity −25 on the prefab
+├─ PlayerVitals            100 health · 100 energy
+├─ PlayerAvatar            binds ModelSlot to MaleAnimator
+├─ PlayerInventory         4 slots, torch then searchlight
+├─ HeldItemVisual          torch and light on LeftHand, pistol on RightHand
+├─ CameraTarget            orbit point, not the capsule center
+├─ ModelSlot
+│   └─ humanoid            Animator + MaleAnimator · StairFootIk added in play
+└─ InventoryCanvas         overlay, sort order 100
+    ├─ Vitals              Health row, Energy row, VitalsHud
+    ├─ Hotbar              4 slots + InventoryHotbarView
+    ├─ Crosshair           on only for the searchlight
+    └─ DeathPanel          hidden until health hits 0</pre>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="k">Swap the body</div>
+      <h3>PlayerAvatar</h3>
+      <p><span class="path">Tools/Player/Swap Model</span> drops a humanoid under ModelSlot, assigns MaleAnimator, turns root motion off, and scales the mesh toward 96% of the capsule height.</p>
     </div>
-    <p style="margin:0.8rem 0 0.3rem;color:#5c564c">Action states. They leave when the clip finishes. Climb and jump-down are also ended by the controller.</p>
-    <div class="row">
-      <span class="pill action">Jump</span>
-      <span class="pill action">Climb Over</span>
-      <span class="pill action">Jump Down</span>
+    <div class="card">
+      <div class="k">Feet and fingers</div>
+      <h3>StairFootIk</h3>
+      <p>Lives on the Animator, because <code>OnAnimatorIK</code> only runs there. It plants stair soles on the tread under each foot.</p>
     </div>
-    <p style="margin:0.8rem 0 0.3rem;color:#5c564c">Stair states. Enter when <code>OnStairs</code> is set. Direction above zero is up. Sprint chooses the run clip only while going up.</p>
-    <div class="row">
-      <span class="pill stairs">Walk Up Stairs</span>
-      <span class="pill stairs">Run Up Stairs</span>
-      <span class="pill stairs">Descend Stairs</span>
+    <div class="card">
+      <div class="k">Serialized gravity</div>
+      <h3>−25 wins</h3>
+      <p>The script field defaults to −40. The prefab stores −25, and that value is what play uses until you change the prefab.</p>
     </div>
   </div>
+
+  <h2 id="input">Hands on keys</h2>
+  <p>Actions live in <span class="path">Assets/Input/PlayerInputActions.inputactions</span>, map <code>Player</code>. The prefab sends Unity Events. It does not use a generated C# wrapper.</p>
+  <div class="split">
+    <div class="mini">
+      <h3>Body</h3>
+      <div class="keyrow"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>camera-relative move</span></div>
+      <div class="keyrow"><kbd>Shift</kbd> <span>sprint, if energy allows</span></div>
+      <div class="keyrow"><kbd>Space</kbd> <span>climb, then drop, then hop</span></div>
+      <div class="keyrow"><kbd>Mouse</kbd> <span>orbit to ±135° from behind, then the body turns</span></div>
+      <div class="keyrow"><kbd>E</kbd> <span>Interact exists, no listener</span></div>
+    </div>
+    <div class="mini">
+      <h3>Hotbar</h3>
+      <div class="keyrow"><kbd>1</kbd> <span>torch</span></div>
+      <div class="keyrow"><kbd>2</kbd> <span>searchlight + crosshair</span></div>
+      <div class="keyrow"><kbd>3</kbd> <span>empty hands</span></div>
+      <div class="keyrow"><kbd>4</kbd> <span>empty hands</span></div>
+      <div class="keyrow"><kbd>Scroll</kbd> <span>next or previous slot, 0.12 s apart</span></div>
+    </div>
+  </div>
+  <p class="caption">Move direction is rebuilt from the camera’s flattened forward and right. The body turns toward that direction. Scroll uses unscaled time, so the cooldown does not depend on a slowed game.</p>
+
+  <h2 id="vitals">Vitals</h2>
+  <p>Two pools, both 0–100. The HUD fills from <code>Changed</code>. Death fills from <code>Died</code>.</p>
+  <div class="split">
+    <div class="mini">
+      <h3>Health</h3>
+      <div class="rate"><span>Idle, grounded, still</span><b class="good">+3 / s</b></div>
+      <div class="rate"><span>Walking, grounded</span><b class="good">+1.25 / s</b></div>
+      <div class="rate"><span>Sprinting, airborne, climbing</span><b>no regen</b></div>
+      <div class="rate"><span>Hits 0</span><b class="bad">death</b></div>
+    </div>
+    <div class="mini">
+      <h3>Energy</h3>
+      <div class="rate"><span>Sprinting</span><b class="bad">−20 / s</b></div>
+      <div class="rate"><span>Idle regen</span><b class="good">+4 / s</b></div>
+      <div class="rate"><span>Walk regen</span><b class="good">+2 / s</b></div>
+      <div class="rate"><span>Space, any of the three</span><b class="warn">−20 to −25</b></div>
+      <div class="rate"><span>Under 20</span><b class="bad">low · bar turns red</b></div>
+    </div>
+  </div>
+
+  <div class="panel" aria-label="Sprint latch">
+    <svg viewBox="0 0 920 168" role="img">
+      <title>Sprint stays off until Shift is released</title>
+      <defs>
+        <marker id="arr-sprint" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#5c564c"/>
+        </marker>
+        <marker id="arr-drop" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#8d2f2f"/>
+        </marker>
+      </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
+        <rect x="16" y="36" width="200" height="78" rx="12" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="116" y="68" text-anchor="middle" font-weight="600">Shift + moving</text>
+        <text x="116" y="90" text-anchor="middle" fill="#5c564c" font-size="12">energy at 20 or more</text>
+
+        <rect x="268" y="36" width="200" height="78" rx="12" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="368" y="68" text-anchor="middle" font-weight="600">Sprint · 8 m/s</text>
+        <text x="368" y="90" text-anchor="middle" fill="#5c564c" font-size="12">drain 20 per second</text>
+
+        <rect x="520" y="36" width="180" height="78" rx="12" fill="#f8e4e2" stroke="#e4c4c0"/>
+        <text x="610" y="68" text-anchor="middle" font-weight="600">Latched walk</text>
+        <text x="610" y="90" text-anchor="middle" fill="#5c564c" font-size="12">5 m/s, bar refills</text>
+
+        <rect x="740" y="36" width="164" height="78" rx="12" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="822" y="68" text-anchor="middle" font-weight="600">Release Shift</text>
+        <text x="822" y="90" text-anchor="middle" fill="#5c564c" font-size="12">latch clears</text>
+
+        <line x1="216" y1="75" x2="264" y2="75" stroke="#5c564c" marker-end="url(#arr-sprint)"/>
+        <path d="M368 114 C 368 146, 610 146, 610 114" fill="none" stroke="#8d2f2f" marker-end="url(#arr-drop)"/>
+        <text x="490" y="156" text-anchor="middle" fill="#8d2f2f" font-size="12">energy crosses under 20</text>
+        <line x1="700" y1="75" x2="736" y2="75" stroke="#5c564c" marker-end="url(#arr-sprint)"/>
+      </g>
+    </svg>
+    <p class="caption">The latch is there so a bar that ticks back over 20 does not immediately start sprinting again while Shift is still held. Jump, climb, and jump-down all refuse while the bar is low, and each successful Space spends 20–25 first.</p>
+  </div>
+
+  <div class="panel" aria-label="Death">
+    <svg viewBox="0 0 920 92" role="img">
+      <title>Death and restart</title>
+      <defs>
+        <marker id="arr-die" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#5c564c"/>
+        </marker>
+      </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
+        <rect x="16" y="16" width="150" height="58" rx="10" fill="#f8e4e2" stroke="#e4c4c0"/>
+        <text x="91" y="50" text-anchor="middle">Health hits 0</text>
+        <rect x="196" y="16" width="170" height="58" rx="10" fill="#fff" stroke="#ddd4c4"/>
+        <text x="281" y="42" text-anchor="middle">timeScale = 0</text>
+        <text x="281" y="60" text-anchor="middle" fill="#5c564c" font-size="11">input off · cursor free</text>
+        <rect x="396" y="16" width="180" height="58" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="486" y="50" text-anchor="middle">“You died” + Restart</text>
+        <rect x="606" y="16" width="298" height="58" rx="10" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="755" y="42" text-anchor="middle">Reload the open scene</text>
+        <text x="755" y="60" text-anchor="middle" fill="#5c564c" font-size="11">timeScale back to 1</text>
+        <line x1="166" y1="45" x2="192" y2="45" stroke="#5c564c" marker-end="url(#arr-die)"/>
+        <line x1="366" y1="45" x2="392" y2="45" stroke="#5c564c" marker-end="url(#arr-die)"/>
+        <line x1="576" y1="45" x2="602" y2="45" stroke="#5c564c" marker-end="url(#arr-die)"/>
+      </g>
+    </svg>
+  </div>
+  <p>Nothing in the forest deals damage yet. <code>ApplyDamage</code> is the door. The context menus <em>Debug Kill</em> and <em>Debug Drain Energy</em> on <code>PlayerVitals</code> exercise death and the tired pose in play mode.</p>
+
+  <h2 id="tired">Tired pose</h2>
+  <p>When energy is low, <code>Tired</code> eases from 0 to 1 over about 0.55 s. The base blend tree is a plane: <code>Speed</code> across, <code>Tired</code> up. Walk and run use the same clip on both rows. Only idle changes shape.</p>
+  <div class="panel">
+    <div class="plane" aria-label="Speed and Tired blend plane">
+      <div></div>
+      <div class="axis">Speed 0 · idle</div>
+      <div class="axis">Speed 0.5 · walk</div>
+      <div class="axis">Speed 1 · sprint</div>
+      <div class="ylab">Tired 1 · low energy</div>
+      <div class="cell tired"><strong>Tired idle</strong><em>Remy@Tired-Idle</em></div>
+      <div class="cell same"><strong>Walking</strong><em>same clip as fresh</em></div>
+      <div class="cell same"><strong>Slow Run</strong><em>same clip as fresh</em></div>
+      <div class="ylab">Tired 0 · fresh</div>
+      <div class="cell"><strong>Breathing Idle</strong><em>Male@Breathing Idle</em></div>
+      <div class="cell"><strong>Walking</strong><em>Male@Walking</em></div>
+      <div class="cell"><strong>Slow Run</strong><em>Male@Slow Run</em></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:#f8ead7"></i>Pose that actually changes</span>
+      <span><i class="sw" style="background:#f7f4ee"></i>Same clip, top and bottom</span>
+      <span><i class="sw" style="background:#e7f0f8"></i>Fresh locomotion</span>
+    </div>
+  </div>
+  <p class="caption"><code>Speed</code> itself eases too: about 0.22 s into a move, about 0.48 s back to idle, so the Mixamo poses have time to mix. Stopping from a sprint passes through the walk blend on the way.</p>
+
+  <h2 id="items">Torch and light</h2>
+  <p>Torch and searchlight are born under <code>LeftHand</code> and their colliders are turned off. The pistol is born under <code>RightHand</code>. Changing slots eases the prop over about 0.32 s, so it does not pop.</p>
+  <div class="split">
+    <div class="mini">
+      <h3>Slot 1 · torch</h3>
+      <div class="rate"><span>Layer</span><b>Hold</b></div>
+      <div class="rate"><span>Mask</span><b>HoldUpperBody</b></div>
+      <div class="rate"><span>State</span><b>Torch Hold</b></div>
+      <div class="rate"><span>Idle</span><b>HoldRate 0, parked at 20%</b></div>
+      <div class="rate"><span>Walk</span><b>HoldRate 1</b></div>
+      <div class="rate"><span>Sprint</span><b>HoldRate 1.35</b></div>
+      <p class="caption">The layer weight is the torch blend. Legs stay on the base layer. The idle frame is parked while the layer is still invisible, then crossfaded in.</p>
+    </div>
+    <div class="mini">
+      <h3>Slot 2 · searchlight</h3>
+      <div class="rate"><span>Layer</span><b>Hold stays at 0</b></div>
+      <div class="rate"><span>Arm</span><b>Left-hand IK + fist curl</b></div>
+      <div class="rate"><span>Aim</span><b>camera center, 40 m</b></div>
+      <div class="rate"><span>Lamp twist</span><b>clamped to 22°</b></div>
+      <div class="rate"><span>While climbing</span><b>light hides</b></div>
+      <p class="caption">The arm stays in front of the chest. A look straight up or behind the body does not fold the shoulder back. The lamp, not the whole arm, takes the steep angle. The crosshair marks that ray.</p>
+    </div>
+  </div>
+  <div class="mini">
+    <h3>Slot 3 · pistol</h3>
+    <div class="rate"><span>Clips</span><b>Pistol Idle · Pistol Walk</b></div>
+    <div class="rate"><span>Parameter</span><b>Pistol</b></div>
+    <div class="rate"><span>Idle</span><b>Speed 0</b></div>
+    <div class="rate"><span>Walk and sprint</span><b>Speed 0.5 and up, PistolRate</b></div>
+    <div class="rate"><span>Gun</span><b>parented to the right hand</b></div>
+    <p class="caption">Selecting the pistol sets <code>Pistol</code> and the base layer crossfades into those two clips. The Hold layer stays at 0. Jump, climb, and stairs still use their own clips. There is no arm IK.</p>
+  </div>
+  <div class="panel" aria-label="Searchlight aim">
+    <svg viewBox="0 0 920 210" role="img">
+      <title>Searchlight aims along the view ray</title>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" fill="#1c1915">
+        <rect x="40" y="70" width="46" height="90" rx="16" fill="#e7e2d8" stroke="#1c1915"/>
+        <circle cx="63" cy="58" r="16" fill="#e7e2d8" stroke="#1c1915"/>
+        <path d="M70 118 L150 108" stroke="#1c1915" stroke-width="6" stroke-linecap="round"/>
+        <rect x="142" y="96" width="36" height="16" rx="4" fill="#2a2a2a"/>
+        <rect x="168" y="98" width="12" height="12" rx="2" fill="#d5e6ff"/>
+        <circle cx="250" cy="40" r="10" fill="#e7f0f8" stroke="#1d4e89"/>
+        <text x="268" y="44" font-size="13">Camera</text>
+        <line x1="258" y1="48" x2="700" y2="150" stroke="#1d4e89" stroke-dasharray="5 4"/>
+        <circle cx="700" cy="150" r="7" fill="#1d4e89"/>
+        <text x="716" y="146" font-size="13">Hit, or 40 m out</text>
+        <path d="M180 104 Q 360 90 520 130" fill="none" stroke="#8a4b12" stroke-width="2"/>
+        <text x="360" y="84" font-size="13" fill="#8a4b12">lamp eases toward the point, 22° max</text>
+        <text x="40" y="190" font-size="13" fill="#5c564c">Ray ignores the player. Arm pitch stays within about ±32°. Elbow hint sits down and out.</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2 id="jump">Space</h2>
+  <p>Grounded, and not already climbing or dropping. Low energy stops the whole chain before any of it spends energy. Otherwise Space spends 20–25, then picks the first match.</p>
+  <div class="panel" aria-label="Space decision">
+    <svg viewBox="0 0 920 300" role="img">
+      <title>Climb, then jump down, then hop</title>
+      <defs>
+        <marker id="arr-jump" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#5c564c"/>
+        </marker>
+      </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
+        <rect x="360" y="12" width="200" height="46" rx="10" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="460" y="40" text-anchor="middle" font-weight="600">Space</text>
+
+        <rect x="40" y="100" width="250" height="92" rx="12" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="165" y="126" text-anchor="middle" font-weight="600">1 · Climb</text>
+        <text x="165" y="148" text-anchor="middle" fill="#5c564c" font-size="12">low probe hits, high probe misses</text>
+        <text x="165" y="168" text-anchor="middle" fill="#5c564c" font-size="12">height about 0.75–1.25 × half capsule</text>
+
+        <rect x="335" y="100" width="250" height="92" rx="12" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="460" y="126" text-anchor="middle" font-weight="600">2 · Jump down</text>
+        <text x="460" y="148" text-anchor="middle" fill="#5c564c" font-size="12">only off the stairs</text>
+        <text x="460" y="168" text-anchor="middle" fill="#5c564c" font-size="12">drop about 0.45–2.1 m</text>
+
+        <rect x="630" y="100" width="250" height="92" rx="12" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="755" y="126" text-anchor="middle" font-weight="600">3 · Hop</text>
+        <text x="755" y="148" text-anchor="middle" fill="#5c564c" font-size="12">upward velocity from jump height</text>
+        <text x="755" y="168" text-anchor="middle" fill="#5c564c" font-size="12">Jump trigger · controller stays on</text>
+
+        <path d="M430 58 L165 96" fill="none" stroke="#5c564c" marker-end="url(#arr-jump)"/>
+        <path d="M460 58 L460 96" fill="none" stroke="#5c564c" marker-end="url(#arr-jump)"/>
+        <path d="M490 58 L755 96" fill="none" stroke="#5c564c" marker-end="url(#arr-jump)"/>
+        <text x="250" y="78" fill="#5c564c" font-size="11">first</text>
+        <text x="500" y="78" fill="#5c564c" font-size="11">else</text>
+        <text x="640" y="78" fill="#5c564c" font-size="11">else</text>
+
+        <rect x="40" y="220" width="840" height="60" rx="12" fill="#fff" stroke="#ddd4c4"/>
+        <text x="60" y="246">Climb timeline</text>
+        <rect x="190" y="234" width="250" height="16" rx="8" fill="#f8ead7"/>
+        <rect x="440" y="234" width="200" height="16" rx="8" fill="#e5f2eb"/>
+        <text x="190" y="268" fill="#5c564c" font-size="12">0–62% fingertips held on the lip</text>
+        <text x="470" y="268" fill="#5c564c" font-size="12">62–96% blend onto the landing</text>
+      </g>
+    </svg>
+    <p class="caption">Stairs are rejected as climb targets. A wide top is a mantle. A thin obstacle looks for ground on the far side. Jump-down rides a short arc and does not hold the lip. SampleScene’s cube is the climb. Its untagged Ledge is the drop. Its tagged Stairs object is neither.</p>
+  </div>
+
+  <h2 id="stairs">Stairs</h2>
+  <p>A stair is a collider whose transform, or a parent, has the tag <code>Stairs</code>. Uphill is that object’s forward, flattened. Contact lasts 0.2 s after the last hit, so a gap between treads does not kick the character back to flat-ground speed.</p>
+  <div class="panel" aria-label="Stair side view">
+    <svg viewBox="0 0 920 230" role="img">
+      <title>Treads, plants, and downhill speed</title>
+      <defs>
+        <marker id="arr-stair" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#8a4b12"/>
+        </marker>
+      </defs>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" fill="#1c1915">
+        <path d="M40 190 H160 V150 H280 V110 H400 V70 H520 V40 H760" fill="none" stroke="#1c1915" stroke-width="3"/>
+        <path d="M40 190 H160 V150 H280 V110 H400 V70 H520 V40 H760 V200 H40 Z" fill="#e7e0d2"/>
+        <text x="90" y="178" font-size="12" fill="#5c564c">0.35 m</text>
+        <text x="168" y="140" font-size="12" fill="#5c564c">0.20</text>
+        <circle cx="220" cy="150" r="7" fill="#1f6b4a"/>
+        <circle cx="340" cy="110" r="7" fill="#1f6b4a"/>
+        <circle cx="460" cy="70" r="7" fill="#1d4e89"/>
+        <text x="540" y="28" font-size="13">forward = uphill</text>
+        <line x1="620" y1="36" x2="740" y2="36" stroke="#8a4b12" marker-end="url(#arr-stair)"/>
+        <text x="40" y="222" font-size="13" fill="#5c564c">Green dots are tread centers the phase lock aims at. The blue dot is the landing. IK only drops the sole onto the surface under that foot.</text>
+      </g>
+    </svg>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="k">Speed</div>
+      <h3>One tread per plant</h3>
+      <p>Horizontal speed is <code>2 × tread / clip length</code> for a two-plant clip. Descend has one plant that reaches the ground, so that cycle is treated as one step and plays faster than its authored length.</p>
+    </div>
+    <div class="card">
+      <div class="k">Downhill</div>
+      <h3>Stick to the slope</h3>
+      <p>Vertical speed is horizontal speed times riser / tread. The capsule rides the steps. Uphill uses the 0.3 m step offset to clear the 0.2 m risers, and fall speed is capped.</p>
+    </div>
+    <div class="card">
+      <div class="k">Phase</div>
+      <h3>Script owns the clock</h3>
+      <p>Once the stair state is fully in, animator speed goes to 0 and normalized time follows distance along the stair. The state machine still chooses which clip.</p>
+    </div>
+  </div>
+  <div class="callout">New stairs: parent the steps, tag that parent <code>Stairs</code>, aim its forward uphill, and keep step renderers about 0.18–0.8 m deep so spacing can be measured. SampleScene is eight steps of 0.35 × 0.20, then a landing. The tag list is in <span class="path">ProjectSettings/TagManager.asset</span>.</div>
+
+  <h2 id="animator">Animator</h2>
+  <p><span class="path">Assets/AnimatorControllers/MaleAnimator.controller</span>. Two layers. The base layer’s IK pass is on.</p>
+  <div class="panel" aria-label="Animator layers">
+    <svg viewBox="0 0 920 250" role="img">
+      <title>Base layer and Hold layer</title>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="13" fill="#1c1915">
+        <text x="16" y="28" fill="#5c564c">Hold layer · weight = torch blend · mask = upper body · speed = HoldRate</text>
+        <rect x="16" y="40" width="888" height="52" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="460" y="71" text-anchor="middle">Torch Hold · Remy@Standing Torch Walk Forward</text>
+
+        <text x="16" y="122" fill="#5c564c">Base layer · Blend Tree, or Pistol Locomotion while Pistol is set</text>
+        <rect x="16" y="134" width="250" height="88" rx="10" fill="#e7f0f8" stroke="#c5d7ea"/>
+        <text x="141" y="168" text-anchor="middle" font-weight="600">Blend Tree</text>
+        <text x="141" y="190" text-anchor="middle" fill="#5c564c" font-size="12">Speed × Tired</text>
+
+        <rect x="282" y="134" width="300" height="88" rx="10" fill="#f8ead7" stroke="#e4cba8"/>
+        <text x="432" y="160" text-anchor="middle" font-weight="600">Jump · Climb Over · Jump Down</text>
+        <text x="432" y="182" text-anchor="middle" fill="#5c564c" font-size="12">triggers · climb and drop also ended by script</text>
+        <text x="432" y="202" text-anchor="middle" fill="#5c564c" font-size="12">Jump Down is tagged Action</text>
+
+        <rect x="598" y="134" width="306" height="88" rx="10" fill="#e5f2eb" stroke="#b7d8c6"/>
+        <text x="751" y="160" text-anchor="middle" font-weight="600">Walk up · Run up · Descend</text>
+        <text x="751" y="182" text-anchor="middle" fill="#5c564c" font-size="12">OnStairs, direction past ±0.35</text>
+        <text x="751" y="202" text-anchor="middle" fill="#5c564c" font-size="12">sprint clip only while going up</text>
+      </g>
+    </svg>
+  </div>
   <table>
-    <thead><tr><th>Parameter</th><th>Set by</th><th>Meaning</th></tr></thead>
+    <thead><tr><th>Parameter</th><th>Who writes it</th><th>What it means</th></tr></thead>
     <tbody>
-      <tr><td><code>Speed</code></td><td><code>HandleAnimation</code></td><td>0 idle, 0.5 walk, 1 sprint. Damped, so the blend eases.</td></tr>
-      <tr><td><code>IsSprinting</code></td><td>same</td><td>True only while sprint is held and there is move input.</td></tr>
-      <tr><td><code>Jump</code> <code>Climb</code> <code>JumpDown</code></td><td>triggers from <code>TryPerformJump</code></td><td>One-shot entries into the action states.</td></tr>
-      <tr><td><code>OnStairs</code></td><td><code>HandleStairs</code></td><td>True while the stair contact timer is running.</td></tr>
-      <tr><td><code>StairDirection</code></td><td>same</td><td>1 uphill, -1 downhill, 0 if the move is across the stair. Compared with 0.35.</td></tr>
+      <tr><td><code>Speed</code></td><td>PlayerController</td><td>0 idle, 0.5 walk, 1 sprint, eased</td></tr>
+      <tr><td><code>Tired</code></td><td>PlayerController</td><td>0 fresh, 1 when energy is low, eased over 0.55 s</td></tr>
+      <tr><td><code>IsSprinting</code></td><td>PlayerController</td><td>Shift, moving, and the latch is clear</td></tr>
+      <tr><td><code>Jump</code> <code>Climb</code> <code>JumpDown</code></td><td>triggers</td><td>One-shot entries</td></tr>
+      <tr><td><code>OnStairs</code></td><td>PlayerController</td><td>Stair contact timer still running</td></tr>
+      <tr><td><code>StairDirection</code></td><td>PlayerController</td><td>1 up, −1 down, 0 across. Threshold 0.35</td></tr>
+      <tr><td><code>HoldRate</code></td><td>HeldItemVisual</td><td>0 idle, 1 walk, 1.35 sprint, on the Hold layer only</td></tr>
+      <tr><td><code>Pistol</code></td><td>HeldItemVisual</td><td>True while the pistol slot is selected. Base layer plays Pistol Locomotion</td></tr>
+      <tr><td><code>PistolRate</code></td><td>PlayerController</td><td>1 at idle and walk, up to sprint/walk while sprinting, so the pistol walk clip keeps up</td></tr>
     </tbody>
   </table>
-  <table>
-    <thead><tr><th>State</th><th>Clip file</th></tr></thead>
-    <tbody>
-      <tr><td>Idle / Walk / Run</td><td><span class="path">Male@Breathing Idle</span>, <span class="path">Male@Walking</span>, <span class="path">Male@Slow Run</span></td></tr>
-      <tr><td>Jump</td><td><span class="path">Male@Standing Jump</span></td></tr>
-      <tr><td>Climb Over</td><td><span class="path">Remy@Braced Hang To Crouch</span></td></tr>
-      <tr><td>Jump Down</td><td><span class="path">Remy@Jumping Down</span></td></tr>
-      <tr><td>Walk Up Stairs</td><td><span class="path">Remy@Walking Up The Stairs</span></td></tr>
-      <tr><td>Run Up Stairs</td><td><span class="path">Remy@Running Up Stairs</span></td></tr>
-      <tr><td>Descend Stairs</td><td><span class="path">Remy@Descending Stairs</span></td></tr>
-    </tbody>
-  </table>
-  <p>Clips sit in <span class="path">Assets/Models/Characters/LowPolyMale/Animations/</span>. They are humanoid and retargeted onto Remy. The Remy exports are large because the mesh is inside the FBX. The controller references the clip, not a separate animation asset.</p>
-  <p>On stairs the controller sets animator speed to 0 and calls <code>Play</code> with a normalized time. The state machine still decides <em>which</em> stair state. The script decides <em>where</em> inside that clip the pose is. If you turn animator speed back to 1 while phase lock is active, the feet will drift off the treads.</p>
+  <p>State names the scripts look up by string: <code>Walk Up Stairs</code>, <code>Run Up Stairs</code>, <code>Descend Stairs</code>, <code>Climb Over</code>, <code>Blend Tree</code>, <code>Torch Hold</code>, <code>Pistol Locomotion</code>. Clips sit in <span class="path">Assets/Models/Characters/LowPolyMale/Animations/</span> and retarget onto the humanoid. Pistol Locomotion is a 1D blend on <code>Speed</code>: 0 is <code>Remy@Pistol Idle</code>, 0.5 is <code>Remy@Pistol Walk</code>.</p>
 
   <h2 id="camera">Camera</h2>
-  <p><span class="path">Assets/Prefabs/Main Camera.prefab</span> has <code>ThirdPersonCamera</code>. It finds a child named <code>CameraTarget</code> on the Player, orbits with the mouse, keeps a distance of about 8.5 m, and spherecasts so the camera does not pass through trees. Yaw 0 looks along +Z. Movement uses that same camera forward.</p>
-  <p><code>CameraFollow.cs</code> is an older damper that offsets from the target's own rotation. No scene or prefab references it. New camera work belongs in <code>ThirdPersonCamera</code>.</p>
+  <div class="panel" aria-label="Camera orbit">
+    <svg viewBox="0 0 920 180" role="img">
+      <title>Third person orbit</title>
+      <g font-family="Iowan Old Style, Palatino, Georgia, serif" fill="#1c1915" font-size="13">
+        <circle cx="310" cy="100" r="8" fill="#1f6b4a"/>
+        <text x="326" y="96">CameraTarget</text>
+        <path d="M310 100 C 430 20, 620 20, 700 78" fill="none" stroke="#1d4e89" stroke-width="2"/>
+        <circle cx="700" cy="78" r="8" fill="#1d4e89"/>
+        <text x="716" y="74">Main Camera</text>
+        <text x="470" y="36" fill="#1d4e89">distance 8.5 · height 4 · pitch −30° to 60°</text>
+        <text x="40" y="160" fill="#5c564c">Yaw matches the body at the start. The orbit stops 135° either side of a rear view. A spherecast of radius 0.35 pulls the camera in before it enters a tree.</text>
+      </g>
+    </svg>
+  </div>
+  <p><span class="path">ThirdPersonCamera</span> on <span class="path">Assets/Prefabs/Main Camera.prefab</span> finds <code>CameraTarget</code> under the player, and reads the Look action itself. Horizontal look is free until it is 135° off a straight rear view. Past that, the extra yaw turns the character and the framing stays put. Climb and jump-down do not take that turn: the camera yaw is clamped and the extra mouse is dropped. The script runs at execution order 100, after movement and the climb warp. <code>CameraFollow.cs</code> is an older damper. No scene uses it. Cursor locks on start and frees on death.</p>
 
-  <h2 id="world">World and scenes</h2>
-  <table>
-    <thead><tr><th>Scene</th><th>Use it for</th></tr></thead>
-    <tbody>
-      <tr><td><span class="path">Assets/Scenes/SampleScene.unity</span></td><td>The small gym. A ground plane, a cube for climb-over, a tagged <code>Stairs</code> run with a landing, and an untagged <code>Ledge</code> for jump-down. This is the scene the traversal code was tuned against.</td></tr>
-      <tr><td><span class="path">Assets/Scenes/Demo_01.unity</span></td><td>The forest walk. Terrain plus the Pure Poly nature scatter.</td></tr>
-      <tr><td><span class="path">Assets/Scenes/Demo_01_Night.unity</span></td><td>The night variant. The torch prefab is parented to the character.</td></tr>
-    </tbody>
-  </table>
-  <p>The forest is not built by a runtime spawner. Two editor menus create it and you save the scene:</p>
-  <ul>
-    <li><code>Tools/Generate Low Poly Forest Terrain (Free Pack)</code> in <span class="path">ProceduralTerrainGenerator.cs</span> builds a 250 m terrain into <span class="path">Assets/New Forest Terrain.asset</span>.</li>
-    <li><code>Tools/Populate with Pure Poly Nature Pack</code> in <span class="path">ForestPopulator.cs</span> scatters trees, grass, and props from <span class="path">Assets/Models/Pure Poly/Free Low Poly Nature Pack/Prefabs</span>.</li>
-    <li><code>Tools/Setup Player Torch (Night)</code> in <span class="path">CreateTorchAndAttach.cs</span> builds <span class="path">Assets/Prefabs/Torch.prefab</span>. <code>TorchFlicker</code> animates the light and particles.</li>
-  </ul>
-  <p>Rendering is URP. Player-facing settings are under <span class="path">Assets/Settings/</span> (<code>PC_RPAsset</code>, <code>Mobile_RPAsset</code>, volume profiles). There is no gameplay UI yet.</p>
+  <h2 id="world">World</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="k">Traversal gym</div>
+      <h3>SampleScene</h3>
+      <p>Ground, a climb cube, tagged stairs with a landing, and an untagged ledge. This is the scene the traversal numbers were tuned against.</p>
+    </div>
+    <div class="card">
+      <div class="k">Day forest</div>
+      <h3>Demo_01</h3>
+      <p>250 m terrain plus the Pure Poly scatter. Built by editor menus, then saved. There is no runtime spawner.</p>
+    </div>
+    <div class="card">
+      <div class="k">Night</div>
+      <h3>Demo_01_Night</h3>
+      <p>Same forest. The torch prefab can be parented for the night pass. In play, the hotbar torch is the one in the hand.</p>
+    </div>
+  </div>
+  <div class="keys" aria-label="Editor menus">
+    <kbd>Tools / Setup Player Vitals</kbd>
+    <kbd>Tools / Player / Swap Model</kbd>
+    <kbd>Tools / Setup Inventory Hotbar</kbd>
+    <kbd>Tools / Apply Visual Pass</kbd>
+    <kbd>Tools / Setup Pistol Locomotion</kbd>
+    <kbd>Tools / Setup Player Torch (Night)</kbd>
+    <kbd>Tools / Generate Low Poly Forest Terrain</kbd>
+    <kbd>Tools / Populate with Pure Poly Nature Pack</kbd>
+  </div>
+  <p class="caption">Those menus live under <span class="path">Assets/Editor/</span> and are not in a build. Rendering is URP, with <code>PC_RPAsset</code> and <code>Mobile_RPAsset</code> in <span class="path">Assets/Settings/</span>.</p>
 
   <h2 id="edit">Where to change things</h2>
   <table>
     <thead><tr><th>You want to…</th><th>Open</th></tr></thead>
     <tbody>
-      <tr><td>Change walk or sprint speed, jump height, climb reach</td><td><code>PlayerController</code> fields, then check the Player prefab so a serialized override is not winning.</td></tr>
-      <tr><td>Change which clip plays</td><td><span class="path">MaleAnimator.controller</span>. Keep the state names. The script looks up <code>Walk Up Stairs</code>, <code>Run Up Stairs</code>, <code>Descend Stairs</code>, <code>Climb Over</code>, and <code>Blend Tree</code> by those exact strings.</td></tr>
-      <tr><td>Add a stair</td><td>Parent the steps under one object, tag it <code>Stairs</code>, aim forward uphill. The tag list is in <span class="path">ProjectSettings/TagManager.asset</span>.</td></tr>
-      <tr><td>Retune foot-to-tread matching</td><td><code>BakeStairClip</code> and <code>PhaseForFeetOnTreads</code> choose the timing. <code>PlantStairFoot</code> only sets height.</td></tr>
-      <tr><td>Change camera distance or collision</td><td><code>ThirdPersonCamera</code> on the Main Camera prefab.</td></tr>
-      <tr><td>Add a button</td><td>Add the action in <span class="path">PlayerInputActions.inputactions</span>, then add a Unity Event on the Player's <code>PlayerInput</code>. Generating the C# wrapper is not how this prefab is wired.</td></tr>
+      <tr><td>Walk, sprint, jump, climb reach, tired ease</td><td><code>PlayerController</code> on the Player prefab. Gravity there is −25.</td></tr>
+      <tr><td>Drain, regen, jump cost, the 20% line</td><td><code>PlayerVitals</code> on the same prefab. Then <span class="path">Tools/Setup Player Vitals</span> if you rebuild the HUD.</td></tr>
+      <tr><td>Which clip plays</td><td><span class="path">MaleAnimator.controller</span>. Keep the state names listed above.</td></tr>
+      <tr><td>A new tired walk or run</td><td>The top row of the 2D blend tree. Today those corners reuse the fresh clips.</td></tr>
+      <tr><td>Torch grip or searchlight aim</td><td><code>HeldItemVisual</code> and <code>SearchlightAim</code>. Rebuild the hotbar with <span class="path">Tools/Setup Inventory Hotbar</span>.</td></tr>
+      <tr><td>Another body</td><td><span class="path">Tools/Player/Swap Model</span>. The FBX needs a Humanoid avatar.</td></tr>
+      <tr><td>A new stair</td><td>Parent, tag <code>Stairs</code>, forward uphill.</td></tr>
+      <tr><td>Foot-to-tread timing</td><td><code>BakeStairClip</code> and <code>PhaseForFeetOnTreads</code>. <code>PlantStairFoot</code> only sets height.</td></tr>
+      <tr><td>Camera distance</td><td><code>ThirdPersonCamera</code> on the Main Camera prefab.</td></tr>
+      <tr><td>A new button</td><td>Add the action, then add a Unity Event on the Player’s <code>PlayerInput</code>.</td></tr>
     </tbody>
   </table>
 
-  <h2 id="team">Working together</h2>
-  <ul>
-    <li>Save the scene after Inspector and Scene-view edits. Unsaved scene work disappears when Unity closes.</li>
-    <li>Do not edit <span class="path">SampleScene.unity</span> at the same time as someone else. Scene YAML merges badly.</li>
-    <li>Prefer prefab edits for the player and the camera. Keep the scene as placement.</li>
-    <li>Commit <span class="path">.meta</span> files with the assets they belong to. A missing meta breaks the animator references.</li>
-    <li><span class="path">Library/</span>, <span class="path">Logs/</span>, <span class="path">Temp/</span>, and <span class="path">UserSettings/</span> are local. Do not commit them.</li>
-  </ul>
+  <h3>Working together</h3>
+  <div class="grid">
+    <div class="card"><h3>Save the scene</h3><p>Inspector and Scene-view edits vanish when Unity closes if the scene was not saved.</p></div>
+    <div class="card"><h3>One editor per scene</h3><p>Two people in <span class="path">SampleScene.unity</span> at once produce a bad YAML merge. Prefer prefab edits.</p></div>
+    <div class="card"><h3>Commit the .meta</h3><p>A missing meta breaks animator and prefab references. Leave <span class="path">Library/</span>, <span class="path">Logs/</span>, <span class="path">Temp/</span>, and <span class="path">UserSettings/</span> untracked.</p></div>
+  </div>
 </main>
 </div>
 <footer>
-  Open <span class="path">docs/architecture.html</span> in a browser. When the player loop or the animator states change, update this page in the same change.
+  Open <span class="path">docs/architecture.html</span> in a browser. When the player loop, the vitals, or the animator layers change, update this page in the same change.
 </footer>
 </body>
 </html>
