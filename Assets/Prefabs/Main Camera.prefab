@@ -151,13 +151,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonCamera
   target: {fileID: 0}
-  distance: 3
-  height: 4.5
+  distance: 2.96
+  height: 3.82
   rotationSpeed: 25
-  minVerticalAngle: -65
-  maxVerticalAngle: 70
+  minVerticalAngle: -64.3
+  maxVerticalAngle: 50.6
   maxYawFromBehind: 40
-  pistolShoulderOffset: 0.85
+  pistolYawFromBehind: 45
+  pistolShoulderOffset: 1.13
   recoilRecovery: 9
   smoothTime: 0.2
   collisionRadius: 0.4

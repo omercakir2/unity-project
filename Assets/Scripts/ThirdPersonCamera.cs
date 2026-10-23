@@ -21,6 +21,8 @@ public class ThirdPersonCamera : MonoBehaviour
     public float maxVerticalAngle = 60f;
     [Tooltip("How far the view may swing to either side of a straight rear view. Further horizontal look turns the character.")]
     public float maxYawFromBehind = 135f;
+    [Tooltip("How far the pistol view may swing to either side of the aim, in degrees. Further horizontal look turns the character. 0 keeps the camera locked behind the barrel.")]
+    public float pistolYawFromBehind = 28f;
     [Tooltip("How far the view shifts onto the character's right while the pistol pose is fully in")]
     public float pistolShoulderOffset = 0.85f;
     [Tooltip("How fast firing kick eases back out, in 1/seconds")]
@@ -106,7 +108,9 @@ public class ThirdPersonCamera : MonoBehaviour
         currentPitch -= lookInput.y * rotationSpeed * 0.02f;
         currentPitch = Mathf.Clamp(currentPitch, minVerticalAngle, maxVerticalAngle);
 
-        ApplyYawLimit(yawDelta);
+        float pose = PistolPose();
+        bool aimLock = pose > 0.001f && player != null && !player.IsTraversing && !player.IsOnStairs();
+        ApplyYawLimit(yawDelta, aimLock ? pose : 0f);
 
         float recoilBlend = 1f - Mathf.Exp(-Mathf.Max(0.01f, recoilRecovery) * Time.deltaTime);
         recoilPitch = Mathf.Lerp(recoilPitch, 0f, recoilBlend);
@@ -116,16 +120,31 @@ public class ThirdPersonCamera : MonoBehaviour
         float pitched = Mathf.Clamp(currentPitch - recoilPitch, minVerticalAngle, maxVerticalAngle);
         Quaternion orbit = Quaternion.Euler(pitched, currentYaw + recoilYaw, 0f);
 
-        // The pistol keeps this same orbit and only slides it onto the character's right.
-        // The look point takes a third of that slide, so the back sits left of center.
-        Vector3 shift = ShoulderShift(pistolShoulderOffset * PistolPose());
+        // The pistol keeps this same orbit and only slides it onto the camera's right.
+        // The slide follows the orbit, not the body. A body-right slide swings the character
+        // off the bottom of the frame when the mouse turns toward that shoulder.
+        // While aiming, the look point takes the whole slide so screen center matches facing.
+        // Otherwise it takes a third, and the back sits left of center.
+        Vector3 shift = OrbitShoulder(orbit, pistolShoulderOffset * pose);
+        float lookShare = aimLock ? Mathf.Lerp(1f / 3f, 1f, pose) : (1f / 3f);
         Vector3 pivot = target.position + Vector3.up * height + shift;
         Vector3 desiredPosition = pivot - (orbit * Vector3.forward * distance);
         desiredPosition = PushOutOfWalls(pivot, desiredPosition, distance);
 
-        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
+        // A trailing follow swings the close orbit across the body while the mouse turns it.
+        // Stick once the pose is in. Ease only while the pose is still blending.
+        if (aimLock && pose >= 0.99f)
+        {
+            transform.position = desiredPosition;
+            currentVelocity = Vector3.zero;
+        }
+        else
+        {
+            float follow = aimLock ? Mathf.Lerp(smoothTime, 0.04f, pose) : smoothTime;
+            transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, follow);
+        }
 
-        Vector3 lookAtCharacter = target.position + Vector3.up * 1.5f + shift * (1f / 3f);
+        Vector3 lookAtCharacter = target.position + Vector3.up * 1.5f + shift * lookShare;
         transform.LookAt(lookAtCharacter);
     }
 
@@ -151,13 +170,12 @@ public class ThirdPersonCamera : MonoBehaviour
         return Mathf.Clamp01(heldItems.PistolPoseWeight);
     }
 
-    private Vector3 ShoulderShift(float meters)
+    private static Vector3 OrbitShoulder(Quaternion orbit, float meters)
     {
         if (Mathf.Abs(meters) < 0.001f)
             return Vector3.zero;
 
-        Transform body = player != null ? player.transform : target;
-        Vector3 right = Vector3.ProjectOnPlane(body.right, Vector3.up);
+        Vector3 right = Vector3.ProjectOnPlane(orbit * Vector3.right, Vector3.up);
         if (right.sqrMagnitude < 0.0001f)
             return Vector3.zero;
 
@@ -197,7 +215,7 @@ public class ThirdPersonCamera : MonoBehaviour
         return hitTransform == player.transform || hitTransform.IsChildOf(player.transform);
     }
 
-    private void ApplyYawLimit(float yawDelta)
+    private void ApplyYawLimit(float yawDelta, float aimPose)
     {
         if (player == null && target != null)
             player = target.GetComponentInParent<PlayerController>();
@@ -209,9 +227,10 @@ public class ThirdPersonCamera : MonoBehaviour
 
         // Add the mouse delta onto the current offset. DeltaAngle alone would
         // flip a fast swing that crosses 180° onto the opposite side.
+        // aimPose eases the free window down to the pistol swing.
         float characterYaw = player.transform.eulerAngles.y;
         float relative = Mathf.DeltaAngle(characterYaw, currentYaw);
-        float limit = Mathf.Max(0f, maxYawFromBehind);
+        float limit = Mathf.Lerp(Mathf.Max(0f, maxYawFromBehind), Mathf.Max(0f, pistolYawFromBehind), Mathf.Clamp01(aimPose));
         float next = relative + yawDelta;
         float clamped = Mathf.Clamp(next, -limit, limit);
         float excess = next - clamped;
@@ -224,9 +243,11 @@ public class ThirdPersonCamera : MonoBehaviour
         }
 
         // When the mouse is still, ease the body back inside the window instead of snapping.
+        // The pistol pose raises that ease so equipping from a side view does not lag the aim.
         if (Mathf.Abs(yawDelta) < 0.02f)
         {
-            float maxStep = 100f * Time.deltaTime;
+            float degreesPerSecond = Mathf.Lerp(100f, 720f, Mathf.Clamp01(aimPose));
+            float maxStep = degreesPerSecond * Time.deltaTime;
             excess = Mathf.Clamp(excess, -maxStep, maxStep);
             clamped = next - excess;
         }

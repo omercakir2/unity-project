@@ -573,7 +573,7 @@
       <div class="keyrow"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>camera-relative move</span></div>
       <div class="keyrow"><kbd>Shift</kbd> <span>sprint, if energy allows</span></div>
       <div class="keyrow"><kbd>Space</kbd> <span>climb, then drop, then hop</span></div>
-      <div class="keyrow"><kbd>Mouse</kbd> <span>orbit to ±135° from behind, then the body turns</span></div>
+      <div class="keyrow"><kbd>Mouse</kbd> <span>orbit to ±135° from behind, then the body turns. With the pistol out, the swing is <code>pistolYawFromBehind</code>, then the body turns</span></div>
       <div class="keyrow"><kbd>E</kbd> <span>Interact exists, no listener</span></div>
     </div>
     <div class="mini">
@@ -585,7 +585,7 @@
       <div class="keyrow"><kbd>Scroll</kbd> <span>next or previous slot, 0.12 s apart</span></div>
     </div>
   </div>
-  <p class="caption">Move direction is rebuilt from the camera’s flattened forward and right. The body turns toward that direction. Scroll uses unscaled time, so the cooldown does not depend on a slowed game.</p>
+  <p class="caption">Move direction is rebuilt from the camera’s flattened forward and right. The body turns toward that direction. With the pistol pose in, the mouse owns facing, walk uses the body’s forward and right, and the stick does not steer. Stairs keep the free orbit and still turn toward the move. Scroll uses unscaled time, so the cooldown does not depend on a slowed game.</p>
 
   <h2 id="vitals">Vitals</h2>
   <p>Two pools, both 0–100. The HUD fills from <code>Changed</code>. Death fills from <code>Died</code>.</p>
@@ -726,7 +726,7 @@
     <div class="rate"><span>Idle</span><b>Speed 0</b></div>
     <div class="rate"><span>Walk and sprint</span><b>Speed 0.5 and up, PistolRate</b></div>
     <div class="rate"><span>Gun</span><b>parented to the right hand</b></div>
-    <p class="caption">Selecting the pistol sets <code>Pistol</code> and the base layer crossfades into those two clips. The Hold layer stays at 0. Jump, climb, and stairs still use their own clips. There is no arm IK.</p>
+    <p class="caption">Selecting the pistol sets <code>Pistol</code> and the base layer crossfades into those two clips. The Hold layer stays at 0. The camera swing in this pose is <code>pistolYawFromBehind</code>. Past that, the mouse turns the body. Jump, climb, and stairs still use their own clips. Stairs keep the free orbit. There is no arm IK.</p>
   </div>
   <div class="panel" aria-label="Searchlight aim">
     <svg viewBox="0 0 920 210" role="img">
@@ -893,11 +893,11 @@
         <circle cx="700" cy="78" r="8" fill="#1d4e89"/>
         <text x="716" y="74">Main Camera</text>
         <text x="470" y="36" fill="#1d4e89">distance 8.5 · height 4 · pitch −30° to 60°</text>
-        <text x="40" y="160" fill="#5c564c">Yaw matches the body at the start. The orbit stops 135° either side of a rear view. A spherecast of radius 0.35 pulls the camera in before it enters a tree.</text>
+        <text x="40" y="160" fill="#5c564c">Yaw matches the body at the start. The orbit stops 135° either side of a rear view, or pistolYawFromBehind while the pistol is out. A spherecast of radius 0.35 pulls the camera in before it enters a tree.</text>
       </g>
     </svg>
   </div>
-  <p><span class="path">ThirdPersonCamera</span> on <span class="path">Assets/Prefabs/Main Camera.prefab</span> finds <code>CameraTarget</code> under the player, and reads the Look action itself. Horizontal look is free until it is 135° off a straight rear view. Past that, the extra yaw turns the character and the framing stays put. Climb and jump-down do not take that turn: the camera yaw is clamped and the extra mouse is dropped. The script runs at execution order 100, after movement and the climb warp. <code>CameraFollow.cs</code> is an older damper. No scene uses it. Cursor locks on start and frees on death.</p>
+  <p><span class="path">ThirdPersonCamera</span> on <span class="path">Assets/Prefabs/Main Camera.prefab</span> finds <code>CameraTarget</code> under the player, and reads the Look action itself. Horizontal look is free until it is 135° off a straight rear view. Past that, the extra yaw turns the character and the framing stays put. While the pistol pose is in, and the player is not on stairs or climbing, that window eases to <code>pistolYawFromBehind</code> on <span class="path">ThirdPersonCamera</span>. The script default is 28°. Inside it, the mouse orbits and the body stays put. Past it, mouse yaw turns the body, and movement does not. The shoulder shift follows the camera orbit, so the character stays in frame while that view swings. The look point takes the full shift so a centered pistol view matches the facing. Once that pose is in, the camera sticks to the orbit instead of trailing the turn. Stairs keep the free window and their own facing. Climb and jump-down do not take the extra turn: the camera yaw is clamped and the extra mouse is dropped. The script runs at execution order 100, after movement and the climb warp. <code>CameraFollow.cs</code> is an older damper. No scene uses it. Cursor locks on start and frees on death.</p>
 
   <h2 id="world">World</h2>
   <div class="grid">

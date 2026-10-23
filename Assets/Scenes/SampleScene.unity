@@ -191,26 +191,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1390204488479304413, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
-      propertyPath: pistolLocalEuler.x
-      value: -43.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 1390204488479304413, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
-      propertyPath: pistolLocalEuler.y
-      value: 14.78
-      objectReference: {fileID: 0}
-    - target: {fileID: 1390204488479304413, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
-      propertyPath: pistolLocalPosition.x
-      value: -0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 1390204488479304413, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
-      propertyPath: pistolLocalPosition.y
-      value: 0.34
-      objectReference: {fileID: 0}
-    - target: {fileID: 1390204488479304413, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
-      propertyPath: pistolLocalPosition.z
-      value: 0.15
-      objectReference: {fileID: 0}
     - target: {fileID: 1653965703412253222, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
       propertyPath: m_Name
       value: Player
@@ -1395,6 +1375,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 930994476}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &946589429 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6299170269644065149, guid: 52b57b8d37e534881b9f245d355a4bc5, type: 3}
+  m_PrefabInstance: {fileID: 22106615}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &950970162
 GameObject:
   m_ObjectHideFlags: 0
@@ -2268,6 +2253,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3909286917101264476, guid: 18ccff99913af41faad3e4459504e332, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 946589429}
     - target: {fileID: 5134021224534136323, guid: 18ccff99913af41faad3e4459504e332, type: 3}
       propertyPath: m_Name
       value: Main Camera

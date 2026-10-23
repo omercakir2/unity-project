@@ -1516,6 +1516,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: c4e1a005-6b2d-4e11-9a01-111111111105
     m_ActionName: Player/HotbarScroll
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c4e1a006-6b2d-4e11-9a01-111111111106
+    m_ActionName: 'Player/Attack[/Mouse/leftButton]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -1605,8 +1609,8 @@ MonoBehaviour:
   torchLocalEuler: {x: 344.6, y: 82.2, z: 0}
   searchlightLocalPosition: {x: 0.021, y: 0.118, z: 0.002}
   searchlightLocalEuler: {x: 280.3, y: 85, z: 177.6}
-  pistolLocalPosition: {x: 0.02, y: 0.28, z: 0.06}
-  pistolLocalEuler: {x: -91.9, y: 6.94, z: 80.79}
+  pistolLocalPosition: {x: -0.01, y: 0.38, z: 0.16}
+  pistolLocalEuler: {x: -78.9, y: -1.3, z: 80.79}
 --- !u!114 &8415847964006251158
 MonoBehaviour:
   m_ObjectHideFlags: 0

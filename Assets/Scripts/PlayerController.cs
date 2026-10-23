@@ -51,6 +51,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 worldMoveDir;
 
     private PlayerVitals vitals;
+    private HeldItemVisual heldItems;
 
     private CharacterController Controller
     {
@@ -399,17 +400,20 @@ public class PlayerController : MonoBehaviour
 
         if (inputMagnitude > 0.01f)
         {
-            Vector3 camForward = cameraTransform.forward;
-            Vector3 camRight = cameraTransform.right;
-            camForward.y = 0f;
-            camRight.y = 0f;
-            camForward.Normalize();
-            camRight.Normalize();
+            // The pistol pose faces the aim. Steering toward the stick here fights the
+            // camera, which turns the body in LateUpdate, and the shoulder view wobbles.
+            bool aimOwnsFacing = PistolAimOwnsFacing();
+            Vector3 moveForward = aimOwnsFacing ? transform.forward : cameraTransform.forward;
+            Vector3 moveRight = aimOwnsFacing ? transform.right : cameraTransform.right;
+            moveForward.y = 0f;
+            moveRight.y = 0f;
+            moveForward.Normalize();
+            moveRight.Normalize();
 
-            Vector3 desiredMoveDir = (camForward * input.z + camRight * input.x).normalized;
+            Vector3 desiredMoveDir = (moveForward * input.z + moveRight * input.x).normalized;
             worldMoveDir = desiredMoveDir;
 
-            if (desiredMoveDir.sqrMagnitude > 0.01f)
+            if (!aimOwnsFacing && desiredMoveDir.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(desiredMoveDir);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 1f - Mathf.Pow(0.1f, Time.deltaTime * (1f / rotationSmoothTime)));
@@ -500,7 +504,18 @@ public class PlayerController : MonoBehaviour
         animator.SetFloat(tiredHash, visualTired);
     }
 
-    private bool IsOnStairs()
+    private bool PistolAimOwnsFacing()
+    {
+        if (IsOnStairs())
+            return false;
+
+        if (heldItems == null)
+            heldItems = GetComponent<HeldItemVisual>();
+        return heldItems != null && heldItems.PistolPoseWeight > 0.001f;
+    }
+
+    // True while stair contact is still counted. The camera keeps its free orbit then.
+    public bool IsOnStairs()
     {
         return Controller != null && stairRoot != null && stairContactTimer > 0f;
     }
