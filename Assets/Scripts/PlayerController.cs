@@ -63,7 +63,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public bool IsSprintingNow => traversal == TraversalKind.None && Exerting;
+    public bool IsSprintingNow =>
+        traversal == TraversalKind.None && Exerting && (IsOnStairs() || MostlyForward(worldMoveDir));
     public bool IsMoving => initialized && moveInput.magnitude > 0.1f;
     public bool IsGrounded => initialized && Controller != null && Controller.isGrounded;
     public bool IsTraversing => traversal != TraversalKind.None;
@@ -92,6 +93,9 @@ public class PlayerController : MonoBehaviour
     }
 
     private readonly int speedHash = Animator.StringToHash("Speed");
+    private readonly int moveXHash = Animator.StringToHash("MoveX");
+    private readonly int moveYHash = Animator.StringToHash("MoveY");
+    private readonly int locomotionRateHash = Animator.StringToHash("LocomotionRate");
     private readonly int tiredHash = Animator.StringToHash("Tired");
     private readonly int pistolRateHash = Animator.StringToHash("PistolRate");
     private readonly int isSprintingHash = Animator.StringToHash("IsSprinting");
@@ -105,9 +109,23 @@ public class PlayerController : MonoBehaviour
     private readonly int descendStairsHash = Animator.StringToHash("Descend Stairs");
 
     private float visualSpeed;
-    private float visualSpeedVelocity;
+    private float visualMoveX;
+    private float visualMoveY;
     private float visualTired;
     private float visualTiredVelocity;
+    private float planarSpeed;
+    private float planarSpeedVelocity;
+    private float blendAngle;
+    private float blendAngleVelocity;
+    private float blendMagnitude;
+    private float blendMagnitudeVelocity;
+    private Vector3 lastPlanarDir = Vector3.forward;
+    private bool clipSpeedsCached;
+    private float walkClipSpeed = 1.64f;
+    private float runClipSpeed = 2.83f;
+    private float backClipSpeed = 1.27f;
+    private float strafeClipSpeed = 1.78f;
+    private const float GaitSmooth = 0.08f;
 
     private enum TraversalKind { None, Climb, JumpDown }
     private TraversalKind traversal;
@@ -186,6 +204,9 @@ public class PlayerController : MonoBehaviour
 
         vitals = GetComponent<PlayerVitals>();
         CacheLimbs();
+        CacheClipSpeeds();
+        if (animator != null)
+            animator.SetFloat(locomotionRateHash, 1f);
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
         initialized = true;
@@ -219,6 +240,8 @@ public class PlayerController : MonoBehaviour
         }
 
         CacheLimbs();
+        clipSpeedsCached = false;
+        CacheClipSpeeds();
     }
 
     private void CacheLimbs()
@@ -396,12 +419,14 @@ public class PlayerController : MonoBehaviour
         if (Controller == null) return;
 
         Vector3 input = new Vector3(moveInput.x, 0f, moveInput.y);
-        float inputMagnitude = input.magnitude;
+        float inputMagnitude = Mathf.Clamp01(input.magnitude);
+        bool onStairs = false;
+        float targetSpeed = 0f;
 
         if (inputMagnitude > 0.01f)
         {
-            // The pistol pose faces the aim. Steering toward the stick here fights the
-            // camera, which turns the body in LateUpdate, and the shoulder view wobbles.
+            // The pistol pose faces the aim, so movement stays on the body. Otherwise
+            // WASD follows the camera and does not yaw the body.
             bool aimOwnsFacing = PistolAimOwnsFacing();
             Vector3 moveForward = aimOwnsFacing ? transform.forward : cameraTransform.forward;
             Vector3 moveRight = aimOwnsFacing ? transform.right : cameraTransform.right;
@@ -411,22 +436,42 @@ public class PlayerController : MonoBehaviour
             moveRight.Normalize();
 
             Vector3 desiredMoveDir = (moveForward * input.z + moveRight * input.x).normalized;
-            worldMoveDir = desiredMoveDir;
+            if (desiredMoveDir.sqrMagnitude > 0.01f)
+                lastPlanarDir = desiredMoveDir;
 
-            if (!aimOwnsFacing && desiredMoveDir.sqrMagnitude > 0.01f)
+            // Stairs still turn toward travel so the stair clips stay aligned.
+            // Off the stairs, WASD does not yaw the body. Sideways and backward
+            // input plays the strafe and walk-back clips instead.
+            if (IsOnStairs() && desiredMoveDir.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(desiredMoveDir);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 1f - Mathf.Pow(0.1f, Time.deltaTime * (1f / rotationSmoothTime)));
             }
 
-            bool onStairs = IsOnStairs();
+            onStairs = IsOnStairs();
             if (onStairs)
                 EnsureStairMetrics();
-            float currentSpeed = onStairs
+            float gait = onStairs
                 ? StairMatchedSpeed()
-                : (Exerting ? sprintSpeed : walkSpeed);
-            velocity.x = desiredMoveDir.x * currentSpeed;
-            velocity.z = desiredMoveDir.z * currentSpeed;
+                : (MostlyForward(desiredMoveDir) && Exerting ? sprintSpeed : walkSpeed);
+            targetSpeed = gait * inputMagnitude;
+        }
+
+        // Ease the body in and out with the step cycle. A hard start at full
+        // speed plays idle feet while the capsule is already gliding.
+        if (onStairs)
+        {
+            planarSpeed = targetSpeed;
+            planarSpeedVelocity = 0f;
+        }
+        else
+            planarSpeed = Mathf.SmoothDamp(planarSpeed, targetSpeed, ref planarSpeedVelocity, GaitSmooth);
+
+        if (planarSpeed > 0.02f && lastPlanarDir.sqrMagnitude > 0.01f)
+        {
+            worldMoveDir = lastPlanarDir;
+            velocity.x = lastPlanarDir.x * planarSpeed;
+            velocity.z = lastPlanarDir.z * planarSpeed;
         }
         else
         {
@@ -483,16 +528,40 @@ public class PlayerController : MonoBehaviour
     {
         if (animator == null) return;
 
-        float inputMagnitude = moveInput.magnitude;
-        bool isMoving = inputMagnitude > 0.1f;
+        bool isMoving = moveInput.magnitude > 0.1f || planarSpeed > 0.35f;
         bool sprinting = Exerting;
-        float targetSpeed = isMoving ? (sprinting ? 1.0f : 0.5f) : 0f;
-
-        // Stopping takes longer than starting so idle/walk Mixamo poses have time to mix.
-        float speedSmooth = targetSpeed < visualSpeed - 0.01f ? speedBlendStop : speedBlendStart;
-        visualSpeed = Mathf.SmoothDamp(visualSpeed, targetSpeed, ref visualSpeedVelocity, speedSmooth);
+        if (walkSpeed > 0.01f && planarSpeed > 0.05f)
+            visualSpeed = Mathf.Clamp(planarSpeed / walkSpeed, 0f, sprintSpeed / Mathf.Max(0.01f, walkSpeed)) * 0.5f;
+        else
+            visualSpeed = 0f;
         animator.SetFloat(speedHash, visualSpeed);
         animator.SetBool(isSprintingHash, sprinting);
+
+        Vector2 moveBlend = LocomotionBlend(isMoving);
+        float targetMag = moveBlend.magnitude;
+        float targetAngle = targetMag > 0.001f ? Mathf.Atan2(moveBlend.x, moveBlend.y) * Mathf.Rad2Deg : blendAngle;
+        blendAngle = Mathf.SmoothDampAngle(blendAngle, targetAngle, ref blendAngleVelocity, GaitSmooth);
+        // Enter the step at full clip weight so idle does not dilute the feet.
+        // Leave it smoothly once the body has nearly stopped.
+        if (targetMag > 0.2f && blendMagnitude < 0.2f)
+        {
+            blendMagnitude = targetMag;
+            blendMagnitudeVelocity = 0f;
+        }
+        else
+            blendMagnitude = Mathf.SmoothDamp(blendMagnitude, targetMag, ref blendMagnitudeVelocity, GaitSmooth);
+        float rad = blendAngle * Mathf.Deg2Rad;
+        visualMoveX = Mathf.Sin(rad) * blendMagnitude;
+        visualMoveY = Mathf.Cos(rad) * blendMagnitude;
+        animator.SetFloat(moveXHash, visualMoveX);
+        animator.SetFloat(moveYHash, visualMoveY);
+
+        float natural = NaturalFor(visualMoveX, visualMoveY);
+        float rate = 1f;
+        if (blendMagnitude > 0.2f && natural > 0.05f && !IsOnStairs())
+            rate = Mathf.Clamp(planarSpeed / natural, 0.35f, 3.5f);
+        animator.SetFloat(locomotionRateHash, rate);
+
         // Pistol locomotion is one walk clip. Speed it up with the sprint so the feet keep up.
         float pistolRate = 1f;
         if (visualSpeed > 0.5f && walkSpeed > 0.01f)
@@ -502,6 +571,89 @@ public class PlayerController : MonoBehaviour
         bool energyLow = vitals != null && vitals.IsEnergyLow;
         visualTired = Mathf.SmoothDamp(visualTired, energyLow ? 1f : 0f, ref visualTiredVelocity, tiredBlend);
         animator.SetFloat(tiredHash, visualTired);
+    }
+
+    private bool MostlyForward(Vector3 direction)
+    {
+        if (direction.sqrMagnitude < 0.01f)
+            return false;
+
+        float along = Vector3.Dot(direction, FlatForward());
+        float side = Vector3.Dot(direction, FlatRight());
+        return along > 0.65f && along >= Mathf.Abs(side);
+    }
+
+    private Vector2 LocomotionBlend(bool stepping)
+    {
+        if (!stepping || worldMoveDir.sqrMagnitude < 0.01f)
+            return Vector2.zero;
+
+        float along = Vector3.Dot(worldMoveDir, FlatForward());
+        float side = Vector3.Dot(worldMoveDir, FlatRight());
+        Vector2 local = new Vector2(side, along);
+        if (local.sqrMagnitude < 0.0001f)
+            return Vector2.zero;
+        local.Normalize();
+
+        // Walk, strafe, and back sit on the 0.5 ring. Forward sprint opens that
+        // out to the run clip as the body actually speeds up.
+        float radius = 0.5f;
+        if (along > 0.65f && planarSpeed > walkSpeed && sprintSpeed > walkSpeed)
+            radius = Mathf.Lerp(0.5f, 1f, Mathf.InverseLerp(walkSpeed, sprintSpeed, planarSpeed));
+        return local * radius;
+    }
+
+    private void CacheClipSpeeds()
+    {
+        if (clipSpeedsCached || animator == null || animator.runtimeAnimatorController == null)
+            return;
+
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        walkClipSpeed = PlanarClipSpeed(clips, "Walking", walkClipSpeed);
+        runClipSpeed = PlanarClipSpeed(clips, "Slow Run", runClipSpeed);
+        backClipSpeed = PlanarClipSpeed(clips, "Walk Back", backClipSpeed);
+        float left = PlanarClipSpeed(clips, "Strafe Left", strafeClipSpeed);
+        float right = PlanarClipSpeed(clips, "Strafe Right", strafeClipSpeed);
+        strafeClipSpeed = (left + right) * 0.5f;
+        clipSpeedsCached = true;
+    }
+
+    private static float PlanarClipSpeed(AnimationClip[] clips, string clipName, float fallback)
+    {
+        for (int i = 0; i < clips.Length; i++)
+        {
+            if (clips[i] == null || clips[i].name != clipName)
+                continue;
+            Vector3 speed = clips[i].averageSpeed;
+            float planar = new Vector2(speed.x, speed.z).magnitude;
+            if (planar > 0.2f)
+                return planar;
+        }
+
+        return fallback;
+    }
+
+    private float NaturalFor(float moveX, float moveY)
+    {
+        float side = Mathf.Abs(moveX) / 0.5f;
+        float forward = Mathf.Max(moveY, 0f);
+        float back = Mathf.Max(-moveY, 0f) / 0.5f;
+        float run = Mathf.Clamp01((forward - 0.5f) / 0.5f);
+        float walk = Mathf.Clamp01(forward / 0.5f) * (1f - run);
+        float sum = side + walk + run + back;
+        if (sum < 0.001f)
+            return walkClipSpeed;
+
+        return (side * strafeClipSpeed + walk * walkClipSpeed + run * runClipSpeed + back * backClipSpeed) / sum;
+    }
+
+    private Vector3 FlatRight()
+    {
+        Vector3 right = transform.right;
+        right.y = 0f;
+        if (right.sqrMagnitude < 0.0001f)
+            return Vector3.Cross(Vector3.up, FlatForward());
+        return right.normalized;
     }
 
     private bool PistolAimOwnsFacing()
@@ -719,6 +871,10 @@ public class PlayerController : MonoBehaviour
             traversalFacing.Normalize();
 
         velocity = Vector3.zero;
+        planarSpeed = 0f;
+        planarSpeedVelocity = 0f;
+        blendMagnitude = 0f;
+        blendMagnitudeVelocity = 0f;
         stairContactTimer = 0f;
         stairRoot = null;
         ReleaseStairPose();
@@ -780,6 +936,8 @@ public class PlayerController : MonoBehaviour
         traversal = TraversalKind.None;
         velocity = Vector3.zero;
         velocity.y = -2f;
+        planarSpeed = 0f;
+        planarSpeedVelocity = 0f;
     }
 
     private bool TryGetClimbNormalized(out float normalized)
@@ -1159,8 +1317,14 @@ public class PlayerController : MonoBehaviour
             animator.speed = 1f;
             animator.ResetTrigger(climbHash);
             visualSpeed = 0f;
-            visualSpeedVelocity = 0f;
+            planarSpeed = 0f;
+            planarSpeedVelocity = 0f;
+            blendMagnitude = 0f;
+            blendMagnitudeVelocity = 0f;
             animator.SetFloat(speedHash, 0f);
+            animator.SetFloat(moveXHash, 0f);
+            animator.SetFloat(moveYHash, 0f);
+            animator.SetFloat(locomotionRateHash, 1f);
             animator.CrossFadeInFixedTime("Blend Tree", 0.3f, 0, 0f);
         }
 
