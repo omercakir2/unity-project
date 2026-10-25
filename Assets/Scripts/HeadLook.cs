@@ -1,10 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Adds a small neck and head turn toward the camera look direction.
-/// Runs after <see cref="ThirdPersonCamera"/> so it uses this frame's view.
+/// Turns the head toward the camera. While the pistol is up, the upper body,
+/// head, and barrel all aim at the crosshair.
 /// </summary>
-[DefaultExecutionOrder(220)]
+[DefaultExecutionOrder(260)]
 public class HeadLook : MonoBehaviour
 {
     [SerializeField] private float yawShare = 0.5f;
@@ -17,8 +17,8 @@ public class HeadLook : MonoBehaviour
 
     private Animator animator;
     private PlayerController player;
+    private HeldItemVisual heldItems;
     private Transform view;
-    private ThirdPersonCamera orbit;
     private float yaw;
     private float pitch;
     private float yawVelocity;
@@ -41,7 +41,6 @@ public class HeadLook : MonoBehaviour
                 view = Camera.main.transform;
             if (view == null)
                 return;
-            orbit = view.GetComponent<ThirdPersonCamera>();
         }
 
         Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
@@ -50,13 +49,14 @@ public class HeadLook : MonoBehaviour
 
         Transform body = player != null ? player.transform : transform;
         bool holdStill = player != null && player.IsTraversing;
+        if (!holdStill && AimPistolAtCrosshair(head))
+            return;
+
         float targetYaw = 0f;
         float targetPitch = 0f;
         if (!holdStill)
         {
-            // Orbit forward stays level when the view is level. Camera.forward points
-            // down at the body because the camera sits above and behind it.
-            Vector3 look = orbit != null ? orbit.LookDirection : view.forward;
+            Vector3 look = view.forward;
             Vector3 flatLook = Vector3.ProjectOnPlane(look, Vector3.up);
             float bodyYaw = body.eulerAngles.y;
             float lookYaw = flatLook.sqrMagnitude > 0.0001f
@@ -95,5 +95,90 @@ public class HeadLook : MonoBehaviour
         {
             head.rotation = full * head.rotation;
         }
+    }
+
+    private bool AimPistolAtCrosshair(Transform head)
+    {
+        if (player == null)
+            return false;
+        if (heldItems == null)
+            heldItems = player.GetComponent<HeldItemVisual>();
+        if (heldItems == null || heldItems.PistolPoseWeight <= 0.02f)
+            return false;
+
+        Camera cam = view.GetComponent<Camera>();
+        if (cam == null)
+            cam = Camera.main;
+        if (cam == null)
+            return false;
+
+        Vector3 aimPoint = CrosshairPoint(cam, head.position);
+        float weight = Mathf.Clamp01(heldItems.PistolPoseWeight);
+        ShareBone(HumanBodyBones.Spine, aimPoint, 0.3f * weight);
+        ShareBone(HumanBodyBones.Chest, aimPoint, 0.45f * weight);
+        ShareBone(HumanBodyBones.UpperChest, aimPoint, 0.6f * weight);
+        ShareBone(HumanBodyBones.Neck, aimPoint, 0.4f * weight);
+        AimBone(head, aimPoint, weight, 80f);
+        heldItems.AimPistolAt(aimPoint, weight);
+        return true;
+    }
+
+    private void ShareBone(HumanBodyBones bone, Vector3 aimPoint, float share)
+    {
+        if (share <= 0.001f)
+            return;
+
+        Transform joint = animator.GetBoneTransform(bone);
+        AimBone(joint, aimPoint, share, 65f);
+    }
+
+    private static void AimBone(Transform joint, Vector3 aimPoint, float weight, float maxDegrees)
+    {
+        if (joint == null || weight <= 0.001f)
+            return;
+
+        Vector3 direction = aimPoint - joint.position;
+        if (direction.sqrMagnitude < 0.04f)
+            return;
+
+        Quaternion correction = Quaternion.FromToRotation(joint.forward, direction.normalized);
+        correction = ClampRotation(correction, maxDegrees);
+        joint.rotation = Quaternion.Slerp(Quaternion.identity, correction, weight) * joint.rotation;
+    }
+
+    private Vector3 CrosshairPoint(Camera cam, Vector3 from)
+    {
+        Vector3 origin = cam.transform.position;
+        Vector3 direction = cam.transform.forward;
+        float fallback = 40f;
+        RaycastHit[] hits = Physics.RaycastAll(origin, direction, 80f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform hitTransform = hits[i].transform;
+            if (hitTransform == null)
+                continue;
+            if (player != null && (hitTransform == player.transform || hitTransform.IsChildOf(player.transform)))
+                continue;
+            if (hitTransform.CompareTag("Player"))
+                continue;
+
+            Vector3 point = hits[i].point;
+            if (Vector3.Dot(point - from, player.transform.forward) > 0.35f)
+                return point;
+        }
+
+        return origin + direction * fallback;
+    }
+
+    private static Quaternion ClampRotation(Quaternion rotation, float maxDegrees)
+    {
+        rotation.ToAngleAxis(out float angle, out Vector3 axis);
+        if (float.IsNaN(axis.x) || axis.sqrMagnitude < 0.0001f)
+            return Quaternion.identity;
+        if (angle > 180f)
+            angle -= 360f;
+        angle = Mathf.Clamp(angle, -maxDegrees, maxDegrees);
+        return Quaternion.AngleAxis(angle, axis);
     }
 }

@@ -111,6 +111,26 @@ public class HeldItemVisual : MonoBehaviour
         return true;
     }
 
+    public void AimPistolAt(Vector3 worldPoint, float weight)
+    {
+        if (weight <= 0.001f || heldPistol == null || !heldPistol.activeInHierarchy)
+            return;
+        // The muzzle is ahead of the pivot, so one twist leaves the barrel short of the crosshair.
+        float blend = Mathf.Clamp01(weight);
+        for (int i = 0; i < 3; i++)
+        {
+            if (!TryGetMuzzle(out Vector3 origin, out Vector3 direction))
+                return;
+
+            Vector3 aim = worldPoint - origin;
+            if (aim.sqrMagnitude < 0.0001f)
+                return;
+
+            Quaternion correction = Quaternion.FromToRotation(direction, aim.normalized);
+            heldPistol.transform.rotation = Quaternion.Slerp(Quaternion.identity, correction, blend) * heldPistol.transform.rotation;
+        }
+    }
+
     private void OnEnable()
     {
         if (!Application.isPlaying || inventory == null)

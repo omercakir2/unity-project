@@ -277,6 +277,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private bool TryCameraPlanar(out Vector3 forward, out Vector3 right)
+    {
+        if (cameraTransform == null)
+        {
+            forward = Vector3.zero;
+            right = Vector3.zero;
+            return false;
+        }
+
+        forward = cameraTransform.forward;
+        forward.y = 0f;
+        right = cameraTransform.right;
+        right.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f || right.sqrMagnitude < 0.0001f)
+        {
+            forward = Vector3.zero;
+            right = Vector3.zero;
+            return false;
+        }
+
+        forward.Normalize();
+        right.Normalize();
+        return true;
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         if (!initialized) return;
@@ -429,13 +454,23 @@ public class PlayerController : MonoBehaviour
 
         if (inputMagnitude > 0.01f)
         {
-            // The pistol pose faces the aim, so movement stays on the body. Otherwise
-            // WASD follows the camera and does not yaw the body.
+            // The pistol pose faces the aim, so movement stays on the body.
+            // Otherwise WASD follows the Cinemachine camera.
             bool aimOwnsFacing = PistolAimOwnsFacing();
-            Vector3 moveForward = aimOwnsFacing ? transform.forward : cameraTransform.forward;
-            Vector3 moveRight = aimOwnsFacing ? transform.right : cameraTransform.right;
+            Vector3 moveForward;
+            Vector3 moveRight;
+            if (aimOwnsFacing || !TryCameraPlanar(out moveForward, out moveRight))
+            {
+                moveForward = aimOwnsFacing ? transform.forward : cameraTransform.forward;
+                moveRight = aimOwnsFacing ? transform.right : cameraTransform.right;
+            }
+
             moveForward.y = 0f;
             moveRight.y = 0f;
+            if (moveForward.sqrMagnitude < 0.0001f)
+                moveForward = Vector3.forward;
+            if (moveRight.sqrMagnitude < 0.0001f)
+                moveRight = Vector3.right;
             moveForward.Normalize();
             moveRight.Normalize();
 

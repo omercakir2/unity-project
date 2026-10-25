@@ -9,8 +9,6 @@ public class PistolShot : MonoBehaviour
 {
     [SerializeField] private float range = 70f;
     [SerializeField] private float cooldown = 0.32f;
-    [SerializeField] private float recoilPitch = 1.7f;
-    [SerializeField] private float recoilYaw = 0.45f;
 
     private HeldItemVisual held;
     private PlayerInventory inventory;
@@ -78,8 +76,6 @@ public class PistolShot : MonoBehaviour
             shotDirection = transform.forward;
         shotDirection.Normalize();
 
-        Camera camera = Camera.main;
-
         Vector3 end = muzzle + shotDirection * range;
         RaycastHit[] hits = Physics.RaycastAll(muzzle, shotDirection, range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -95,10 +91,6 @@ public class PistolShot : MonoBehaviour
         SpawnTracer(muzzle, end);
         held.KickPistol();
         KickSlide();
-
-        ThirdPersonCamera view = camera != null ? camera.GetComponent<ThirdPersonCamera>() : null;
-        if (view != null)
-            view.AddRecoil(recoilPitch, Random.Range(-recoilYaw, recoilYaw));
 
         if (audioSource != null && shotClip != null)
             audioSource.PlayOneShot(shotClip);
