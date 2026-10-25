@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 
 public class InventoryHotbarView : MonoBehaviour
@@ -20,6 +21,7 @@ public class InventoryHotbarView : MonoBehaviour
         [SerializeField] private GameObject torchGlyph;
         [SerializeField] private GameObject searchlightGlyph;
         [SerializeField] private GameObject pistolGlyph;
+        [SerializeField] private TMP_Text selectionLabel;
 
         public void Apply(bool occupied, string itemId, bool showPreview, bool active)
         {
@@ -37,6 +39,27 @@ public class InventoryHotbarView : MonoBehaviour
                 searchlightGlyph.SetActive(showSearchlight);
             if (pistolGlyph != null && pistolGlyph.activeSelf != showPistol)
                 pistolGlyph.SetActive(showPistol);
+
+            string caption = active && occupied ? CaptionFor(itemId) : null;
+            if (selectionLabel == null)
+                return;
+
+            bool showCaption = !string.IsNullOrEmpty(caption);
+            if (selectionLabel.gameObject.activeSelf != showCaption)
+                selectionLabel.gameObject.SetActive(showCaption);
+            if (showCaption)
+                selectionLabel.text = caption;
+        }
+
+        private static string CaptionFor(string itemId)
+        {
+            if (itemId == PlayerInventory.TorchItemId)
+                return "Fire Torch";
+            if (itemId == PlayerInventory.SearchlightItemId)
+                return "Light Ball";
+            if (itemId == PlayerInventory.PistolItemId)
+                return "Desert Eagle";
+            return null;
         }
     }
 

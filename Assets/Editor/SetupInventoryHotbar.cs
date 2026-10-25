@@ -199,61 +199,13 @@ public static class SetupInventoryHotbar
             : new Color(0.08f, 0.08f, 0.08f, 0.55f));
         Stretch(background.rectTransform, 4f);
 
-        GameObject glyph = CreateUiObject("TorchGlyph", slot.transform);
-        RectTransform glyphRect = glyph.GetComponent<RectTransform>();
-        glyphRect.anchorMin = new Vector2(0.5f, 0.5f);
-        glyphRect.anchorMax = new Vector2(0.5f, 0.5f);
-        glyphRect.pivot = new Vector2(0.5f, 0.5f);
-        glyphRect.anchoredPosition = new Vector2(0f, -2f);
-        glyphRect.sizeDelta = new Vector2(28f, 48f);
-
-        Image handle = CreateImage("Handle", glyph.transform, panel, new Color(0.4f, 0.25f, 0.12f, 1f));
-        handle.type = Image.Type.Simple;
-        RectTransform handleRect = handle.rectTransform;
-        handleRect.anchorMin = new Vector2(0.5f, 0f);
-        handleRect.anchorMax = new Vector2(0.5f, 0f);
-        handleRect.pivot = new Vector2(0.5f, 0f);
-        handleRect.anchoredPosition = new Vector2(0f, 2f);
-        handleRect.sizeDelta = new Vector2(8f, 28f);
-
-        Image flame = CreateImage("Flame", glyph.transform, knob != null ? knob : panel, new Color(1f, 0.55f, 0.12f, 1f));
-        flame.type = Image.Type.Simple;
-        RectTransform flameRect = flame.rectTransform;
-        flameRect.anchorMin = new Vector2(0.5f, 1f);
-        flameRect.anchorMax = new Vector2(0.5f, 1f);
-        flameRect.pivot = new Vector2(0.5f, 1f);
-        flameRect.anchoredPosition = new Vector2(0f, -2f);
-        flameRect.sizeDelta = new Vector2(18f, 18f);
-
+        GameObject glyph = CreateIconGlyph("TorchGlyph", slot.transform, LoadHotbarIcon("torch.png"));
         glyph.SetActive(itemId == PlayerInventory.TorchItemId);
 
-        GameObject searchGlyph = CreateUiObject("SearchlightGlyph", slot.transform);
-        RectTransform searchRect = searchGlyph.GetComponent<RectTransform>();
-        searchRect.anchorMin = new Vector2(0.5f, 0.5f);
-        searchRect.anchorMax = new Vector2(0.5f, 0.5f);
-        searchRect.pivot = new Vector2(0.5f, 0.5f);
-        searchRect.sizeDelta = new Vector2(40f, 18f);
-
-        Image searchBody = CreateImage("Body", searchGlyph.transform, panel, new Color(0.22f, 0.24f, 0.28f, 1f));
-        searchBody.type = Image.Type.Simple;
-        RectTransform searchBodyRect = searchBody.rectTransform;
-        searchBodyRect.anchorMin = new Vector2(0f, 0.5f);
-        searchBodyRect.anchorMax = new Vector2(0f, 0.5f);
-        searchBodyRect.pivot = new Vector2(0f, 0.5f);
-        searchBodyRect.anchoredPosition = new Vector2(2f, 0f);
-        searchBodyRect.sizeDelta = new Vector2(22f, 8f);
-
-        Image searchLens = CreateImage("Lens", searchGlyph.transform, knob != null ? knob : panel, new Color(0.75f, 0.88f, 1f, 1f));
-        searchLens.type = Image.Type.Simple;
-        RectTransform searchLensRect = searchLens.rectTransform;
-        searchLensRect.anchorMin = new Vector2(1f, 0.5f);
-        searchLensRect.anchorMax = new Vector2(1f, 0.5f);
-        searchLensRect.pivot = new Vector2(1f, 0.5f);
-        searchLensRect.anchoredPosition = new Vector2(-2f, 0f);
-        searchLensRect.sizeDelta = new Vector2(12f, 12f);
+        GameObject searchGlyph = CreateIconGlyph("SearchlightGlyph", slot.transform, LoadHotbarIcon("searchlight.png"));
         searchGlyph.SetActive(itemId == PlayerInventory.SearchlightItemId);
 
-        GameObject pistolGlyph = CreatePistolGlyph(slot.transform, panel);
+        GameObject pistolGlyph = CreateIconGlyph("PistolGlyph", slot.transform, LoadHotbarIcon("pistol.png"));
         pistolGlyph.SetActive(itemId == PlayerInventory.PistolItemId);
 
         GameObject labelGo = CreateUiObject("Index", slot.transform);
@@ -282,45 +234,123 @@ public static class SetupInventoryHotbar
         };
     }
 
-    private static GameObject CreatePistolGlyph(Transform slot, Sprite panel)
+    private const string HotbarIconDir = "Assets/UI/Icons/";
+
+    private static void ConfigureHotbarIcon(string fileName)
     {
-        GameObject glyph = CreateUiObject("PistolGlyph", slot);
-        RectTransform glyphRect = glyph.GetComponent<RectTransform>();
-        glyphRect.anchorMin = new Vector2(0.5f, 0.5f);
-        glyphRect.anchorMax = new Vector2(0.5f, 0.5f);
-        glyphRect.pivot = new Vector2(0.5f, 0.5f);
-        glyphRect.anchoredPosition = new Vector2(2f, -2f);
-        glyphRect.sizeDelta = new Vector2(46f, 28f);
+        string path = HotbarIconDir + fileName;
+        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null)
+            return;
 
-        UnityEngine.UI.Image slide = CreateImage("Slide", glyph.transform, panel, new Color(0.22f, 0.23f, 0.26f, 1f));
-        slide.type = UnityEngine.UI.Image.Type.Simple;
-        RectTransform slideRect = slide.rectTransform;
-        slideRect.anchorMin = new Vector2(0.5f, 1f);
-        slideRect.anchorMax = new Vector2(0.5f, 1f);
-        slideRect.pivot = new Vector2(0.5f, 1f);
-        slideRect.anchoredPosition = new Vector2(0f, -2f);
-        slideRect.sizeDelta = new Vector2(34f, 6f);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.npotScale = TextureImporterNPOTScale.None;
+        importer.filterMode = FilterMode.Bilinear;
+        importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        importer.maxTextureSize = 512;
+        importer.SaveAndReimport();
+    }
 
-        UnityEngine.UI.Image barrel = CreateImage("Barrel", glyph.transform, panel, new Color(0.16f, 0.17f, 0.19f, 1f));
-        barrel.type = UnityEngine.UI.Image.Type.Simple;
-        RectTransform barrelRect = barrel.rectTransform;
-        barrelRect.anchorMin = new Vector2(1f, 1f);
-        barrelRect.anchorMax = new Vector2(1f, 1f);
-        barrelRect.pivot = new Vector2(1f, 1f);
-        barrelRect.anchoredPosition = new Vector2(-2f, -3f);
-        barrelRect.sizeDelta = new Vector2(12f, 4f);
+    private static Sprite LoadHotbarIcon(string fileName)
+    {
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(HotbarIconDir + fileName);
+        if (sprite == null)
+            Debug.LogError("[Inventory] Missing hotbar icon " + HotbarIconDir + fileName);
+        return sprite;
+    }
 
-        UnityEngine.UI.Image grip = CreateImage("Grip", glyph.transform, panel, new Color(0.1f, 0.1f, 0.11f, 1f));
-        grip.type = UnityEngine.UI.Image.Type.Simple;
-        RectTransform gripRect = grip.rectTransform;
-        gripRect.anchorMin = new Vector2(0f, 0f);
-        gripRect.anchorMax = new Vector2(0f, 0f);
-        gripRect.pivot = new Vector2(0f, 0f);
-        gripRect.anchoredPosition = new Vector2(8f, 2f);
-        gripRect.sizeDelta = new Vector2(8f, 16f);
-        gripRect.localRotation = Quaternion.Euler(0f, 0f, 12f);
+    private static GameObject CreateIconGlyph(string name, Transform parent, Sprite icon)
+    {
+        GameObject glyph = CreateUiObject(name, parent);
+        RectTransform rect = glyph.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, -2f);
+        rect.sizeDelta = new Vector2(56f, 56f);
 
+        Image image = glyph.AddComponent<Image>();
+        image.sprite = icon;
+        image.type = Image.Type.Simple;
+        image.preserveAspect = true;
+        image.color = Color.white;
+        image.raycastTarget = false;
         return glyph;
+    }
+
+    public static string ApplyHotbarIcons()
+    {
+        ConfigureHotbarIcon("torch.png");
+        ConfigureHotbarIcon("searchlight.png");
+        ConfigureHotbarIcon("pistol.png");
+
+        Sprite torch = LoadHotbarIcon("torch.png");
+        Sprite searchlight = LoadHotbarIcon("searchlight.png");
+        Sprite pistol = LoadHotbarIcon("pistol.png");
+        if (torch == null || searchlight == null || pistol == null)
+            return "missing-icons";
+
+        GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+        try
+        {
+            int updated = 0;
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            var glyphs = new List<Transform>();
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (candidate == null)
+                    continue;
+                string glyphName = candidate.name;
+                if (glyphName == "TorchGlyph" || glyphName == "SearchlightGlyph" || glyphName == "PistolGlyph")
+                    glyphs.Add(candidate);
+            }
+
+            for (int i = 0; i < glyphs.Count; i++)
+            {
+                Transform glyph = glyphs[i];
+                Sprite icon = null;
+                if (glyph.name == "TorchGlyph")
+                    icon = torch;
+                else if (glyph.name == "SearchlightGlyph")
+                    icon = searchlight;
+                else if (glyph.name == "PistolGlyph")
+                    icon = pistol;
+                if (icon == null)
+                    continue;
+
+                for (int child = glyph.childCount - 1; child >= 0; child--)
+                    Object.DestroyImmediate(glyph.GetChild(child).gameObject);
+
+                Image image = glyph.GetComponent<Image>();
+                if (image == null)
+                    image = glyph.gameObject.AddComponent<Image>();
+                image.sprite = icon;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+                image.color = Color.white;
+                image.raycastTarget = false;
+
+                RectTransform rect = glyph.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = new Vector2(0f, -2f);
+                rect.sizeDelta = new Vector2(56f, 56f);
+                updated++;
+            }
+
+            PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+            return "icons=" + updated;
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
     }
 
     public static string InstallPistol()
@@ -355,8 +385,7 @@ public static class SetupInventoryHotbar
             if (existing != null)
                 Object.DestroyImmediate(existing.gameObject);
 
-            Sprite panel = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            GameObject glyph = CreatePistolGlyph(slot, panel);
+            GameObject glyph = CreateIconGlyph("PistolGlyph", slot, LoadHotbarIcon("pistol.png"));
             glyph.SetActive(true);
 
             InventoryHotbarView view = root.GetComponentInChildren<InventoryHotbarView>(true);

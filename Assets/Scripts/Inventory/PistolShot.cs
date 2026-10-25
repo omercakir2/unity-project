@@ -23,7 +23,6 @@ public class PistolShot : MonoBehaviour
     private bool slideCached;
     private AudioSource audioSource;
     private AudioClip shotClip;
-    private int impactCount;
 
     private void Awake()
     {
@@ -90,7 +89,6 @@ public class PistolShot : MonoBehaviour
             if (hitTransform == null || hitTransform == transform || hitTransform.IsChildOf(transform))
                 continue;
             end = hits[i].point;
-            SpawnImpact(hits[i].point, hits[i].normal);
             break;
         }
 
@@ -169,66 +167,12 @@ public class PistolShot : MonoBehaviour
         Destroy(tracer, 0.07f);
     }
 
-    private void SpawnImpact(Vector3 point, Vector3 normal)
-    {
-        if (impactCount > 16)
-            return;
-
-        GameObject mark = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        mark.name = "ShotImpact";
-        Collider collider = mark.GetComponent<Collider>();
-        if (collider != null)
-        {
-            collider.enabled = false;
-            Destroy(collider);
-        }
-        mark.transform.position = point + normal * 0.03f;
-        mark.transform.localScale = Vector3.one * 0.12f;
-        Renderer renderer = mark.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.sharedMaterial = ImpactMaterial();
-        }
-
-        impactCount++;
-        Destroy(mark, 1.6f);
-        StartCoroutine(ReleaseImpact());
-    }
-
-    private System.Collections.IEnumerator ReleaseImpact()
-    {
-        yield return new WaitForSeconds(1.6f);
-        impactCount = Mathf.Max(0, impactCount - 1);
-    }
-
     private InputAction FindAttack()
     {
         PlayerInput playerInput = GetComponent<PlayerInput>();
         if (playerInput == null || playerInput.actions == null)
             return null;
         return playerInput.actions.FindAction("Attack", false);
-    }
-
-    private static Material impactMaterial;
-
-    private static Material ImpactMaterial()
-    {
-        if (impactMaterial != null)
-            return impactMaterial;
-
-        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        if (shader == null)
-            shader = Shader.Find("Sprites/Default");
-        impactMaterial = new Material(shader);
-        Color flash = new Color(1f, 0.55f, 0.15f, 1f);
-        if (impactMaterial.HasProperty("_BaseColor"))
-            impactMaterial.SetColor("_BaseColor", flash);
-        if (impactMaterial.HasProperty("_Color"))
-            impactMaterial.SetColor("_Color", flash);
-        return impactMaterial;
     }
 
     private static Material beamMaterial;

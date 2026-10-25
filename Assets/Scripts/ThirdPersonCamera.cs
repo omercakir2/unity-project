@@ -148,6 +148,19 @@ public class ThirdPersonCamera : MonoBehaviour
         transform.LookAt(lookAtCharacter);
     }
 
+    /// <summary>
+    /// Direction the orbit is facing. Positive pitch looks down.
+    /// This is the view into the scene, not the ray from the camera onto the body.
+    /// </summary>
+    public Vector3 LookDirection
+    {
+        get
+        {
+            float pitched = Mathf.Clamp(currentPitch - recoilPitch, minVerticalAngle, maxVerticalAngle);
+            return Quaternion.Euler(pitched, currentYaw + recoilYaw, 0f) * Vector3.forward;
+        }
+    }
+
     public void AddRecoil(float pitchDegrees, float yawDegrees)
     {
         recoilPitch = Mathf.Clamp(recoilPitch + pitchDegrees, 0f, 7f);

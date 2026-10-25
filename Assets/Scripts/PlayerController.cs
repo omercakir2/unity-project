@@ -209,6 +209,8 @@ public class PlayerController : MonoBehaviour
             animator.SetFloat(locomotionRateHash, 1f);
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
+        if (animator != null && animator.GetComponent<HeadLook>() == null)
+            animator.gameObject.AddComponent<HeadLook>();
         initialized = true;
         Debug.Log("[PlayerController] Successfully initialized.");
     }
@@ -237,6 +239,8 @@ public class PlayerController : MonoBehaviour
             animator.applyRootMotion = false;
             if (Application.isPlaying && animator.GetComponent<StairFootIk>() == null)
                 animator.gameObject.AddComponent<StairFootIk>();
+            if (Application.isPlaying && animator.GetComponent<HeadLook>() == null)
+                animator.gameObject.AddComponent<HeadLook>();
         }
 
         CacheLimbs();
