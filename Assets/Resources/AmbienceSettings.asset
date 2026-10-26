@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44924edaeced4a73af49ddd74658484, type: 3}
+  m_Name: AmbienceSettings
+  m_EditorClassIdentifier: Assembly-CSharp::AmbienceSettings
+  themeVolume: 0.16
+  rainVolume: 0.36
+  rainPriority: 96
+  areaSize: 21
+  emitHeight: 13.2
+  fallSpeed: 15.5
+  dropLifetime: 0.55
+  dropsPerSecond: 1418
+  maxDrops: 747
+  dropWidth: 0.01
+  dropColor: {r: 0.8820755, g: 0.9892439, b: 1, a: 0.55}
+  streakLength: 0.18
+  wind: -0.9
