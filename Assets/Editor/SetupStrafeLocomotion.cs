@@ -8,7 +8,7 @@ public static class SetupStrafeLocomotion
     private const string IdlePath = "Assets/Models/Characters/LowPolyMale/Animations/Male@Breathing Idle.fbx";
     private const string TiredPath = "Assets/Models/Characters/LowPolyMale/Animations/Remy@Tired-Idle.fbx";
     private const string WalkPath = "Assets/Models/Characters/LowPolyMale/Animations/Male@Walking.fbx";
-    private const string RunPath = "Assets/Models/Characters/LowPolyMale/Animations/Male@Slow Run.fbx";
+    private const string RunPath = "Assets/Models/Characters/LowPolyMale/Animations/Remy@Fast Run.fbx";
     private const string BackPath = "Assets/Models/Characters/LowPolyMale/Animations/Remy@Walking Backwards.fbx";
     private const string LeftPath = "Assets/Models/Characters/LowPolyMale/Animations/Remy@Left Strafe Walk.fbx";
     private const string RightPath = "Assets/Models/Characters/LowPolyMale/Animations/Remy@Right Strafe Walk.fbx";
@@ -33,7 +33,7 @@ public static class SetupStrafeLocomotion
         AnimationClip idle = LoadClip(IdlePath);
         AnimationClip tired = LoadClip(TiredPath);
         AnimationClip walk = LoadClip(WalkPath);
-        AnimationClip run = LoadClip(RunPath);
+        AnimationClip run = ConfigureClip(RunPath, avatar, "Fast Run");
         if (back == null || left == null || right == null || idle == null || tired == null || walk == null || run == null)
         {
             return "strafe-anim: missing-clip"

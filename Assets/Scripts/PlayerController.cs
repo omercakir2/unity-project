@@ -649,7 +649,7 @@ public class PlayerController : MonoBehaviour
 
         AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
         walkClipSpeed = PlanarClipSpeed(clips, "Walking", walkClipSpeed);
-        runClipSpeed = PlanarClipSpeed(clips, "Slow Run", runClipSpeed);
+        runClipSpeed = PlanarClipSpeed(clips, "Fast Run", runClipSpeed);
         backClipSpeed = PlanarClipSpeed(clips, "Walk Back", backClipSpeed);
         float left = PlanarClipSpeed(clips, "Strafe Left", strafeClipSpeed);
         float right = PlanarClipSpeed(clips, "Strafe Right", strafeClipSpeed);

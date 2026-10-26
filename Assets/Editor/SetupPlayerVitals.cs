@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public static class SetupPlayerVitals
@@ -10,6 +12,9 @@ public static class SetupPlayerVitals
     private const string ControllerPath = "Assets/AnimatorControllers/MaleAnimator.controller";
     private const string FontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
     private const string BarSpritePath = "Assets/UI/Bar.png";
+    private const string HealthIconPath = "Assets/UI/Icons/health.png";
+    private const string EnergyIconPath = "Assets/UI/Icons/energy.png";
+    private const string NightScenePath = "Assets/Scenes/IndustrialYard_Night.unity";
 
     private static readonly Color TrackColor = new Color(0.08f, 0.08f, 0.08f, 0.72f);
     private static readonly Color HealthColor = new Color(0.35f, 0.75f, 0.4f, 1f);
@@ -243,6 +248,10 @@ public static class SetupPlayerVitals
         Sprite bar = AssetDatabase.LoadAssetAtPath<Sprite>(BarSpritePath);
         if (bar == null)
             bar = panel;
+        ConfigureIcon(HealthIconPath);
+        ConfigureIcon(EnergyIconPath);
+        Sprite healthIcon = AssetDatabase.LoadAssetAtPath<Sprite>(HealthIconPath);
+        Sprite energyIcon = AssetDatabase.LoadAssetAtPath<Sprite>(EnergyIconPath);
 
         GameObject vitalsRoot = CreateUiObject("Vitals", canvas);
         RectTransform vitalsRect = vitalsRoot.GetComponent<RectTransform>();
@@ -260,8 +269,8 @@ public static class SetupPlayerVitals
         column.childForceExpandWidth = true;
         column.childForceExpandHeight = false;
 
-        BarWidgets health = CreateBar(vitalsRoot.transform, "HealthRow", "Health", bar, font, HealthColor);
-        BarWidgets energy = CreateBar(vitalsRoot.transform, "EnergyRow", "Energy", bar, font, EnergyColor);
+        BarWidgets health = CreateBar(vitalsRoot.transform, "HealthRow", "Health", bar, font, HealthColor, healthIcon);
+        BarWidgets energy = CreateBar(vitalsRoot.transform, "EnergyRow", "Energy", bar, font, EnergyColor, energyIcon);
 
         GameObject death = CreateUiObject("DeathPanel", canvas);
         RectTransform deathRect = death.GetComponent<RectTransform>();
@@ -324,7 +333,143 @@ public static class SetupPlayerVitals
         public TMP_Text Value;
     }
 
-    private static BarWidgets CreateBar(Transform parent, string rowName, string label, Sprite panel, TMP_FontAsset font, Color fillColor)
+    public static string AttachIcons()
+    {
+        ConfigureIcon(HealthIconPath);
+        ConfigureIcon(EnergyIconPath);
+        Sprite healthIcon = AssetDatabase.LoadAssetAtPath<Sprite>(HealthIconPath);
+        Sprite energyIcon = AssetDatabase.LoadAssetAtPath<Sprite>(EnergyIconPath);
+        if (healthIcon == null || energyIcon == null)
+            return "missing-icon health=" + (healthIcon != null) + " energy=" + (energyIcon != null);
+
+        GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+        try
+        {
+            Transform vitals = FindNamed(root.transform, "Vitals");
+            if (vitals == null)
+                return "missing-vitals";
+
+            Transform healthRow = vitals.Find("HealthRow");
+            Transform energyRow = vitals.Find("EnergyRow");
+            if (healthRow == null || energyRow == null)
+                return "missing-row";
+
+            EnsureRowIcon(healthRow, healthIcon);
+            EnsureRowIcon(energyRow, energyIcon);
+            PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        int removed = RemoveWorldSymbolSprites();
+        return "icons-attached removed-world=" + removed;
+    }
+
+    private static void ConfigureIcon(string path)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null)
+            return;
+
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.npotScale = TextureImporterNPOTScale.None;
+        importer.filterMode = FilterMode.Bilinear;
+        TextureImporterSettings settings = new TextureImporterSettings();
+        importer.ReadTextureSettings(settings);
+        settings.spriteAlignment = (int)SpriteAlignment.Center;
+        settings.spritePivot = new Vector2(0.5f, 0.5f);
+        settings.spriteMode = (int)SpriteImportMode.Single;
+        importer.SetTextureSettings(settings);
+        importer.SaveAndReimport();
+    }
+
+    private static void EnsureRowIcon(Transform row, Sprite sprite)
+    {
+        Transform existing = row.Find("Icon");
+        if (existing != null)
+            Object.DestroyImmediate(existing.gameObject);
+
+        Sprite plate = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+        Image backing = CreateImage("Icon", row, plate, new Color(0.08f, 0.08f, 0.08f, 0.82f));
+        backing.type = Image.Type.Simple;
+        LayoutElement layout = backing.gameObject.AddComponent<LayoutElement>();
+        layout.preferredWidth = 40f;
+        layout.preferredHeight = 40f;
+        layout.minWidth = 40f;
+        layout.minHeight = 40f;
+        backing.transform.SetAsFirstSibling();
+
+        Image glyph = CreateImage("Glyph", backing.transform, sprite, Color.white);
+        glyph.type = Image.Type.Simple;
+        glyph.preserveAspect = true;
+        Stretch(glyph.rectTransform, 2f);
+    }
+
+    private static int RemoveWorldSymbolSprites()
+    {
+        bool opened = false;
+        Scene scene = default;
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            Scene candidate = SceneManager.GetSceneAt(i);
+            if (candidate.path != NightScenePath)
+                continue;
+            scene = candidate;
+            break;
+        }
+
+        if (!scene.IsValid())
+        {
+            scene = EditorSceneManager.OpenScene(NightScenePath, OpenSceneMode.Additive);
+            opened = true;
+        }
+
+        var found = new List<GameObject>();
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+            CollectNamed(roots[i].transform, found);
+
+        for (int i = 0; i < found.Count; i++)
+        {
+            if (found[i] != null)
+                Object.DestroyImmediate(found[i]);
+        }
+
+        if (found.Count > 0)
+            EditorSceneManager.SaveScene(scene);
+        if (opened)
+            EditorSceneManager.CloseScene(scene, true);
+        return found.Count;
+    }
+
+    private static void CollectNamed(Transform node, List<GameObject> found)
+    {
+        if (node.name == "health_0" || node.name == "energy_0")
+            found.Add(node.gameObject);
+        for (int i = 0; i < node.childCount; i++)
+            CollectNamed(node.GetChild(i), found);
+    }
+
+    private static Transform FindNamed(Transform node, string name)
+    {
+        if (node.name == name)
+            return node;
+        for (int i = 0; i < node.childCount; i++)
+        {
+            Transform found = FindNamed(node.GetChild(i), name);
+            if (found != null)
+                return found;
+        }
+
+        return null;
+    }
+
+    private static BarWidgets CreateBar(Transform parent, string rowName, string label, Sprite panel, TMP_FontAsset font, Color fillColor, Sprite icon)
     {
         GameObject row = CreateUiObject(rowName, parent);
         LayoutElement rowLayout = row.AddComponent<LayoutElement>();
@@ -338,6 +483,9 @@ public static class SetupPlayerVitals
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
+
+        if (icon != null)
+            EnsureRowIcon(row.transform, icon);
 
         TextMeshProUGUI name = CreateText("Label", row.transform, font, label, 26f, Color.white, TextAlignmentOptions.MidlineLeft);
         LayoutElement nameLayout = name.gameObject.AddComponent<LayoutElement>();

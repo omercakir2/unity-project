@@ -11,6 +11,10 @@ using UnityEngine.InputSystem;
 public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
 {
     [SerializeField] private float mouseGain = 0.45f;
+    [SerializeField] private float idleLookLead = 22f;
+    [SerializeField] private float movingLookLead = 14f;
+    [SerializeField] private float idleYawSmooth = 0.16f;
+    [SerializeField] private float movingYawSmooth = 0.08f;
 
     public InputAxis HorizontalLook = new InputAxis
     {
@@ -47,6 +51,10 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     private float currentFov = 60f;
     private float fovVelocity;
     private bool baseFovCaptured;
+    private float aimYaw;
+    private float bodyYawVelocity;
+    private bool aimSynced;
+    private bool wasOnStairs;
 
     void IInputAxisOwner.GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
     {
@@ -102,19 +110,87 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
 
         float pitch = Mathf.Clamp(VerticalLook.Value, VerticalLook.Range.x, VerticalLook.Range.y);
         VerticalLook.Value = pitch;
-        float yaw = HorizontalLook.Value;
-
-        bool holdBody = player != null && player.IsTraversing;
-        if (!holdBody && player != null)
-        {
-            player.transform.Rotate(0f, yaw, 0f, Space.World);
-            HorizontalLook.Value = 0f;
-            yaw = 0f;
-        }
-
-        transform.localRotation = Quaternion.Euler(pitch, yaw, 0f);
+        ApplyLook(pitch, HorizontalLook.Value);
         UpdatePistolCamera();
         UpdateFieldOfView();
+    }
+
+    // Mouse yaw leads the body by a few degrees. The leftover sits on this rig
+    // so the camera arrives first and HeadLook can turn the chest toward it.
+    private void ApplyLook(float pitch, float yawDelta)
+    {
+        if (player == null)
+        {
+            transform.localRotation = Quaternion.Euler(pitch, yawDelta, 0f);
+            return;
+        }
+
+        if (player.IsTraversing)
+        {
+            aimSynced = false;
+            wasOnStairs = false;
+            transform.localRotation = Quaternion.Euler(pitch, yawDelta, 0f);
+            return;
+        }
+
+        if (!aimSynced)
+        {
+            player.transform.Rotate(0f, yawDelta, 0f, Space.World);
+            HorizontalLook.Value = 0f;
+            aimYaw = player.transform.eulerAngles.y;
+            bodyYawVelocity = 0f;
+            aimSynced = true;
+            wasOnStairs = player.IsOnStairs();
+            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            return;
+        }
+
+        HorizontalLook.Value = 0f;
+        if (player.IsOnStairs())
+        {
+            if (!wasOnStairs)
+            {
+                float leadNow = Mathf.DeltaAngle(player.transform.eulerAngles.y, aimYaw);
+                player.transform.Rotate(0f, leadNow, 0f, Space.World);
+            }
+
+            player.transform.Rotate(0f, yawDelta, 0f, Space.World);
+            aimYaw = player.transform.eulerAngles.y;
+            bodyYawVelocity = 0f;
+            wasOnStairs = true;
+            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            return;
+        }
+
+        wasOnStairs = false;
+        if (heldItems == null)
+            heldItems = player.GetComponent<HeldItemVisual>();
+        if (heldItems != null && heldItems.PistolPoseWeight > PistolOutThreshold)
+        {
+            float leadNow = Mathf.DeltaAngle(player.transform.eulerAngles.y, aimYaw);
+            player.transform.Rotate(0f, leadNow + yawDelta, 0f, Space.World);
+            aimYaw = player.transform.eulerAngles.y;
+            bodyYawVelocity = 0f;
+            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            return;
+        }
+
+        float bodyYaw = player.transform.eulerAngles.y;
+        aimYaw += yawDelta;
+        bool moving = player.IsMoving;
+        float maxLead = Mathf.Max(0f, moving ? movingLookLead : idleLookLead);
+        float smooth = Mathf.Max(0.01f, moving ? movingYawSmooth : idleYawSmooth);
+        float newBody = Mathf.SmoothDampAngle(bodyYaw, aimYaw, ref bodyYawVelocity, smooth);
+        float lead = Mathf.DeltaAngle(newBody, aimYaw);
+        float clamped = Mathf.Clamp(lead, -maxLead, maxLead);
+        if (!Mathf.Approximately(lead, clamped))
+        {
+            newBody = aimYaw - clamped;
+            bodyYawVelocity = 0f;
+        }
+
+        player.transform.rotation = Quaternion.Euler(0f, newBody, 0f);
+        transform.localRotation = Quaternion.Euler(pitch, Mathf.DeltaAngle(newBody, aimYaw), 0f);
     }
 
     private void AttachVirtualCamera()

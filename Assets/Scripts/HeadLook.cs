@@ -7,11 +7,13 @@ using UnityEngine;
 [DefaultExecutionOrder(260)]
 public class HeadLook : MonoBehaviour
 {
-    [SerializeField] private float yawShare = 0.5f;
+    [SerializeField] private float yawShare = 0.8f;
     [SerializeField] private float pitchShare = 0.45f;
-    [SerializeField] private float maxYaw = 42f;
+    [SerializeField] private float maxYaw = 16f;
     [SerializeField] private float maxPitchUp = 22f;
     [SerializeField] private float maxPitchDown = 18f;
+    [SerializeField, Range(0f, 0.5f)] private float spineShare = 0.18f;
+    [SerializeField, Range(0f, 0.5f)] private float chestShare = 0.14f;
     [SerializeField, Range(0f, 0.6f)] private float neckShare = 0.28f;
     [SerializeField] private float smoothTime = 0.1f;
 
@@ -82,19 +84,49 @@ public class HeadLook : MonoBehaviour
         right.Normalize();
 
         Quaternion full = Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(pitch, right);
-        Transform neck = animator.GetBoneTransform(HumanBodyBones.Neck);
-        if (neck != null && head.IsChildOf(neck) && neckShare > 0.001f)
+        ApplyLookChain(head, full);
+    }
+
+    // Parent shares multiply into the children. The head only adds what is left,
+    // so the chain meets the look target and does not overshoot it.
+    private void ApplyLookChain(Transform head, Quaternion full)
+    {
+        float spine = Mathf.Max(0f, spineShare);
+        float chest = Mathf.Max(0f, chestShare);
+        float neck = Mathf.Max(0f, neckShare);
+        float sum = spine + chest + neck;
+        if (sum > 0.85f)
         {
-            Quaternion neckAdd = Quaternion.Slerp(Quaternion.identity, full, neckShare);
-            neck.rotation = neckAdd * neck.rotation;
-            // The neck turn already reached the head. Add only the rest.
-            Quaternion headAdd = full * Quaternion.Inverse(neckAdd);
-            head.rotation = headAdd * head.rotation;
+            float scale = 0.85f / sum;
+            spine *= scale;
+            chest *= scale;
+            neck *= scale;
         }
-        else
-        {
-            head.rotation = full * head.rotation;
-        }
+
+        Quaternion applied = Quaternion.identity;
+        applied = AddPortion(head, HumanBodyBones.Spine, full, spine, applied);
+        applied = AddPortion(head, HumanBodyBones.Chest, full, spine + chest, applied);
+        applied = AddPortion(head, HumanBodyBones.Neck, full, spine + chest + neck, applied);
+
+        Quaternion headAdd = full * Quaternion.Inverse(applied);
+        head.rotation = headAdd * head.rotation;
+    }
+
+    private Quaternion AddPortion(
+        Transform head,
+        HumanBodyBones bone,
+        Quaternion full,
+        float cumulative,
+        Quaternion applied)
+    {
+        Transform joint = animator.GetBoneTransform(bone);
+        if (joint == null || joint == head || !head.IsChildOf(joint))
+            return applied;
+
+        Quaternion target = Quaternion.Slerp(Quaternion.identity, full, Mathf.Clamp01(cumulative));
+        Quaternion add = target * Quaternion.Inverse(applied);
+        joint.rotation = add * joint.rotation;
+        return target;
     }
 
     private bool AimPistolAtCrosshair(Transform head)

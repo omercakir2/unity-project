@@ -19,8 +19,16 @@ public class PistolShot : MonoBehaviour
     private Transform slide;
     private Vector3 slideRest;
     private bool slideCached;
+    private const string ShotResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_gunshot_03";
+    private const string TailResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_tail_01";
+    private const float ShotVolume = 0.35f;
+    // The tail file peaks around 0.08 while the shot peaks around 0.9, so it
+    // stays under the crack at full scale and still reads as room reverb.
+    private const float TailVolume = 1f;
+
     private AudioSource audioSource;
     private AudioClip shotClip;
+    private AudioClip tailClip;
 
     private void Awake()
     {
@@ -30,8 +38,18 @@ public class PistolShot : MonoBehaviour
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
-        audioSource.volume = 0.45f;
-        shotClip = CreateShotClip();
+        audioSource.volume = 1f;
+        audioSource.dopplerLevel = 0f;
+        shotClip = Resources.Load<AudioClip>(ShotResourcePath);
+        tailClip = Resources.Load<AudioClip>(TailResourcePath);
+        if (shotClip == null)
+            Debug.LogWarning("[PistolShot] Missing gunshot at Resources/" + ShotResourcePath + ".");
+        else
+            shotClip.LoadAudioData();
+        if (tailClip == null)
+            Debug.LogWarning("[PistolShot] Missing gunshot tail at Resources/" + TailResourcePath + ".");
+        else
+            tailClip.LoadAudioData();
     }
 
     private void Update()
@@ -93,7 +111,9 @@ public class PistolShot : MonoBehaviour
         KickSlide();
 
         if (audioSource != null && shotClip != null)
-            audioSource.PlayOneShot(shotClip);
+            audioSource.PlayOneShot(shotClip, ShotVolume);
+        if (audioSource != null && tailClip != null)
+            audioSource.PlayOneShot(tailClip, TailVolume);
 
         return true;
     }
@@ -190,26 +210,5 @@ public class PistolShot : MonoBehaviour
         beamMaterial.SetInt("_ZWrite", 0);
         beamMaterial.renderQueue = (int)RenderQueue.Transparent;
         return beamMaterial;
-    }
-
-    private static AudioClip CreateShotClip()
-    {
-        const int rate = 22050;
-        int count = (int)(rate * 0.11f);
-        float[] samples = new float[count];
-        uint noise = 17483u;
-        for (int i = 0; i < count; i++)
-        {
-            noise = noise * 1664525u + 1013904223u;
-            float white = ((noise >> 8) & 65535) / 32768f - 1f;
-            float time = i / (float)rate;
-            float crack = Mathf.Exp(-time * 42f);
-            float body = Mathf.Sin(time * 150f * Mathf.PI * 2f) * Mathf.Exp(-time * 16f);
-            samples[i] = (white * 0.62f * crack + body * 0.38f) * 0.85f;
-        }
-
-        AudioClip clip = AudioClip.Create("PistolShot", count, 1, rate, false);
-        clip.SetData(samples, 0);
-        return clip;
     }
 }
