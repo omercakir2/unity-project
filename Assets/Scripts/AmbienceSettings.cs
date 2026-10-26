@@ -13,6 +13,7 @@ public class AmbienceSettings : ScriptableObject
     [Header("Rain Audio")]
     [Range(0f, 1f)] public float rainVolume = 0.35f;
     [Range(0, 256)] public int rainPriority = 128;
+    [Range(0f, 1f)] public float footstepVolume = 0.5f;
 
     [Header("Rain Particles")]
     [Tooltip("Width and depth of the rain around the player, in meters.")]

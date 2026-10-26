@@ -211,6 +211,8 @@ public class PlayerController : MonoBehaviour
             animator.gameObject.AddComponent<StairFootIk>();
         if (animator != null && animator.GetComponent<HeadLook>() == null)
             animator.gameObject.AddComponent<HeadLook>();
+        if (GetComponent<RainFootsteps>() == null)
+            gameObject.AddComponent<RainFootsteps>();
         initialized = true;
         Debug.Log("[PlayerController] Successfully initialized.");
     }
