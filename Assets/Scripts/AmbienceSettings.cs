@@ -22,6 +22,8 @@ public class AmbienceSettings : ScriptableObject
     [Header("Zombie")]
     [Range(0f, 15f)] public float zombieCrawlVolume = 0.65f;
     [Range(0f, 15f)] public float zombieScreamVolume = 0.9f;
+    [InspectorName("What the fuck")]
+    [Range(0f, 1f)] public float wtfVolume = 0.9f;
     [Range(0f, 1f)] public float ghostStingVolume = 0.75f;
 
     [Header("Torch")]

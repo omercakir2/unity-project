@@ -13,6 +13,7 @@ public class SoundLevelsWindow : EditorWindow
         "runBreathVolume",
         "zombieCrawlVolume",
         "zombieScreamVolume",
+        "wtfVolume",
         "ghostStingVolume",
         "torchVolume",
         "pistolShotVolume",
