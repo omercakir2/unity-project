@@ -213,6 +213,8 @@ public class PlayerController : MonoBehaviour
             animator.gameObject.AddComponent<HeadLook>();
         if (GetComponent<RainFootsteps>() == null)
             gameObject.AddComponent<RainFootsteps>();
+        if (GetComponent<PlayerBreath>() == null)
+            gameObject.AddComponent<PlayerBreath>();
         initialized = true;
         Debug.Log("[PlayerController] Successfully initialized.");
     }

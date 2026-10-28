@@ -12,10 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a44924edaeced4a73af49ddd74658484, type: 3}
   m_Name: AmbienceSettings
   m_EditorClassIdentifier: Assembly-CSharp::AmbienceSettings
-  themeVolume: 0.1
+  themeVolume: 0.381
   rainVolume: 0.25
   rainPriority: 96
   footstepVolume: 0.84
+  walkBreathVolume: 0.09
+  runBreathVolume: 0.4
+  zombieCrawlVolume: 1
+  zombieScreamVolume: 1
+  ghostStingVolume: 0.123
+  torchVolume: 0.873
+  pistolShotVolume: 0.59
+  pistolTailVolume: 1
   areaSize: 21
   emitHeight: 5.3
   fallSpeed: 15.5
@@ -25,4 +33,4 @@ MonoBehaviour:
   dropWidth: 0.01
   dropColor: {r: 0.8820755, g: 0.9892439, b: 1, a: 0.55}
   streakLength: 0.0001
-  wind: 0.5
+  wind: 0.59

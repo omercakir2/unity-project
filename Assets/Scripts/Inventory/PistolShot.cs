@@ -21,12 +21,9 @@ public class PistolShot : MonoBehaviour
     private bool slideCached;
     private const string ShotResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_gunshot_03";
     private const string TailResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_tail_01";
-    private const float ShotVolume = 0.35f;
-    // The tail file peaks around 0.08 while the shot peaks around 0.9, so it
-    // stays under the crack at full scale and still reads as room reverb.
-    private const float TailVolume = 1f;
 
     private AudioSource audioSource;
+    private AmbienceSettings settings;
     private AudioClip shotClip;
     private AudioClip tailClip;
 
@@ -35,6 +32,7 @@ public class PistolShot : MonoBehaviour
         held = GetComponent<HeldItemVisual>();
         inventory = GetComponent<PlayerInventory>();
         player = GetComponent<PlayerController>();
+        settings = AmbienceSettings.LoadOrDefault();
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
@@ -103,6 +101,9 @@ public class PistolShot : MonoBehaviour
             if (hitTransform == null || hitTransform == transform || hitTransform.IsChildOf(transform))
                 continue;
             end = hits[i].point;
+            ZombieController zombie = hitTransform.GetComponentInParent<ZombieController>();
+            if (zombie != null)
+                zombie.Kill();
             break;
         }
 
@@ -110,10 +111,12 @@ public class PistolShot : MonoBehaviour
         held.KickPistol();
         KickSlide();
 
+        float shotVolume = settings != null ? settings.pistolShotVolume : 0.35f;
+        float tailVolume = settings != null ? settings.pistolTailVolume : 1f;
         if (audioSource != null && shotClip != null)
-            audioSource.PlayOneShot(shotClip, ShotVolume);
+            audioSource.PlayOneShot(shotClip, shotVolume);
         if (audioSource != null && tailClip != null)
-            audioSource.PlayOneShot(tailClip, TailVolume);
+            audioSource.PlayOneShot(tailClip, tailVolume);
 
         return true;
     }

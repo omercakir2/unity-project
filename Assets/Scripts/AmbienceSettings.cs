@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Saved knobs for the theme, the rain loop, and the local rain particles.
+// Saved knobs for sound levels, the rain loop, and the local rain particles.
 // Edits in Play mode stay on this asset after you stop.
 [CreateAssetMenu(fileName = "AmbienceSettings", menuName = "Game/Ambience Settings")]
 public class AmbienceSettings : ScriptableObject
@@ -14,6 +14,23 @@ public class AmbienceSettings : ScriptableObject
     [Range(0f, 1f)] public float rainVolume = 0.35f;
     [Range(0, 256)] public int rainPriority = 128;
     [Range(0f, 1f)] public float footstepVolume = 0.5f;
+
+    [Header("Player")]
+    [Range(0f, 1f)] public float walkBreathVolume = 0.32f;
+    [Range(0f, 1f)] public float runBreathVolume = 0.4f;
+
+    [Header("Zombie")]
+    [Range(0f, 15f)] public float zombieCrawlVolume = 0.65f;
+    [Range(0f, 15f)] public float zombieScreamVolume = 0.9f;
+    [Range(0f, 1f)] public float ghostStingVolume = 0.75f;
+
+    [Header("Torch")]
+    [Range(0f, 1f)] public float torchVolume = 0.4f;
+
+    [Header("Pistol")]
+    [Range(0f, 1f)] public float pistolShotVolume = 0.35f;
+    [Tooltip("The tail file is much quieter than the shot, so full level still sits under the crack.")]
+    [Range(0f, 1f)] public float pistolTailVolume = 1f;
 
     [Header("Rain Particles")]
     [Tooltip("Width and depth of the rain around the player, in meters.")]
