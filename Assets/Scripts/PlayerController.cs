@@ -120,11 +120,6 @@ public class PlayerController : MonoBehaviour
     private float blendMagnitude;
     private float blendMagnitudeVelocity;
     private Vector3 lastPlanarDir = Vector3.forward;
-    private bool clipSpeedsCached;
-    private float walkClipSpeed = 1.64f;
-    private float runClipSpeed = 2.83f;
-    private float backClipSpeed = 1.27f;
-    private float strafeClipSpeed = 1.78f;
     private const float GaitSmooth = 0.08f;
 
     private enum TraversalKind { None, Climb, JumpDown }
@@ -204,9 +199,11 @@ public class PlayerController : MonoBehaviour
 
         vitals = GetComponent<PlayerVitals>();
         CacheLimbs();
-        CacheClipSpeeds();
         if (animator != null)
+        {
             animator.SetFloat(locomotionRateHash, 1f);
+            animator.SetFloat(pistolRateHash, 1f);
+        }
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
         if (animator != null && animator.GetComponent<HeadLook>() == null)
@@ -248,8 +245,6 @@ public class PlayerController : MonoBehaviour
         }
 
         CacheLimbs();
-        clipSpeedsCached = false;
-        CacheClipSpeeds();
     }
 
     private void CacheLimbs()
@@ -599,17 +594,9 @@ public class PlayerController : MonoBehaviour
         animator.SetFloat(moveXHash, visualMoveX);
         animator.SetFloat(moveYHash, visualMoveY);
 
-        float natural = NaturalFor(visualMoveX, visualMoveY);
-        float rate = 1f;
-        if (blendMagnitude > 0.2f && natural > 0.05f && !IsOnStairs())
-            rate = Mathf.Clamp(planarSpeed / natural, 0.35f, 3.5f);
-        animator.SetFloat(locomotionRateHash, rate);
-
-        // Pistol locomotion is one walk clip. Speed it up with the sprint so the feet keep up.
-        float pistolRate = 1f;
-        if (visualSpeed > 0.5f && walkSpeed > 0.01f)
-            pistolRate = Mathf.Lerp(1f, sprintSpeed / walkSpeed, (visualSpeed - 0.5f) * 2f);
-        animator.SetFloat(pistolRateHash, pistolRate);
+        // Move speed only picks the walk or run pose. Playback stays at the clip rate.
+        animator.SetFloat(locomotionRateHash, 1f);
+        animator.SetFloat(pistolRateHash, 1f);
 
         bool energyLow = vitals != null && vitals.IsEnergyLow;
         visualTired = Mathf.SmoothDamp(visualTired, energyLow ? 1f : 0f, ref visualTiredVelocity, tiredBlend);
@@ -644,50 +631,6 @@ public class PlayerController : MonoBehaviour
         if (along > 0.65f && planarSpeed > walkSpeed && sprintSpeed > walkSpeed)
             radius = Mathf.Lerp(0.5f, 1f, Mathf.InverseLerp(walkSpeed, sprintSpeed, planarSpeed));
         return local * radius;
-    }
-
-    private void CacheClipSpeeds()
-    {
-        if (clipSpeedsCached || animator == null || animator.runtimeAnimatorController == null)
-            return;
-
-        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
-        walkClipSpeed = PlanarClipSpeed(clips, "Walking", walkClipSpeed);
-        runClipSpeed = PlanarClipSpeed(clips, "Fast Run", runClipSpeed);
-        backClipSpeed = PlanarClipSpeed(clips, "Walk Back", backClipSpeed);
-        float left = PlanarClipSpeed(clips, "Strafe Left", strafeClipSpeed);
-        float right = PlanarClipSpeed(clips, "Strafe Right", strafeClipSpeed);
-        strafeClipSpeed = (left + right) * 0.5f;
-        clipSpeedsCached = true;
-    }
-
-    private static float PlanarClipSpeed(AnimationClip[] clips, string clipName, float fallback)
-    {
-        for (int i = 0; i < clips.Length; i++)
-        {
-            if (clips[i] == null || clips[i].name != clipName)
-                continue;
-            Vector3 speed = clips[i].averageSpeed;
-            float planar = new Vector2(speed.x, speed.z).magnitude;
-            if (planar > 0.2f)
-                return planar;
-        }
-
-        return fallback;
-    }
-
-    private float NaturalFor(float moveX, float moveY)
-    {
-        float side = Mathf.Abs(moveX) / 0.5f;
-        float forward = Mathf.Max(moveY, 0f);
-        float back = Mathf.Max(-moveY, 0f) / 0.5f;
-        float run = Mathf.Clamp01((forward - 0.5f) / 0.5f);
-        float walk = Mathf.Clamp01(forward / 0.5f) * (1f - run);
-        float sum = side + walk + run + back;
-        if (sum < 0.001f)
-            return walkClipSpeed;
-
-        return (side * strafeClipSpeed + walk * walkClipSpeed + run * runClipSpeed + back * backClipSpeed) / sum;
     }
 
     private Vector3 FlatRight()

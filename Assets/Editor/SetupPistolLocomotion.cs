@@ -129,8 +129,8 @@ public static class SetupPistolLocomotion
         pistol.iKOnFeet = true;
         pistol.writeDefaultValues = true;
         pistol.speed = 1f;
-        pistol.speedParameterActive = true;
-        pistol.speedParameter = "PistolRate";
+        pistol.speedParameterActive = false;
+        pistol.speedParameter = "";
 
         EnsureTransition(locomotion, pistol, 0.25f, AnimatorConditionMode.If, 0f, "Pistol");
         EnsureTransition(pistol, locomotion, 0.25f, AnimatorConditionMode.IfNot, 0f, "Pistol");

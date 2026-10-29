@@ -195,8 +195,8 @@ public static class SetupStrafeLocomotion
         locomotion.motion = tree;
         locomotion.iKOnFeet = true;
         locomotion.speed = 1f;
-        locomotion.speedParameterActive = true;
-        locomotion.speedParameter = "LocomotionRate";
+        locomotion.speedParameterActive = false;
+        locomotion.speedParameter = "";
 
         EditorUtility.SetDirty(idleTree);
         EditorUtility.SetDirty(tree);

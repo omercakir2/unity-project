@@ -265,9 +265,8 @@ public class HeldItemVisual : MonoBehaviour
 
         float speed = anim.GetFloat(SpeedHash);
         bool idle = speed < 0.05f;
-        float holdRate = 0f;
-        if (carryWeight > PoseVisibleThreshold && !idle)
-            holdRate = speed < 0.75f ? 1f : 1.35f;
+        // Freeze the held pose while standing. While moving, play it at the clip rate.
+        float holdRate = carryWeight > PoseVisibleThreshold && !idle ? 1f : 0f;
         anim.SetFloat(HoldRateHash, holdRate);
         ParkHoldIdle(anim, layer, wantTorch || wantSearchlight, idle);
         // The pistol clips replace locomotion. Jump, climb, and stairs keep their own states.
