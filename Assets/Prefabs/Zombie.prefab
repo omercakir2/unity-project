@@ -69,7 +69,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b80949f2c41e54937a832f450a0bd2cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieController
-  runSpeed: 6.2
+  runSpeed: 7
   turnSpeed: 540
   gravity: -40
   groundStick: 0.4
