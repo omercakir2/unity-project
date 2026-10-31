@@ -10,7 +10,7 @@ Third person character controller with camera-relative movement, sprint, and mou
 
 ## Team Workflow (Important)
 
-**Scene changes are saved in `Assets/Scenes/SampleScene.unity`**
+**Scene changes are saved in `Assets/Game/Scenes/SampleScene.unity`**
 
 - You **must** press `Ctrl+S` (or File → Save) after every change in the Scene view or Inspector. If you forget, changes are lost when you close Unity.
 - All `.unity`, `.prefab`, and `.meta` files are committed to Git.
@@ -35,7 +35,7 @@ Third person character controller with camera-relative movement, sprint, and mou
    - Most files in `ProjectSettings/` should be committed (input settings, tags, layers, graphics, etc.).
 
 5. **Scripts**
-   - All logic stays in `Assets/Scripts/`. These are easy to merge.
+   - All logic stays in `Assets/Game/Scripts/`. These are easy to merge.
 
 ## Architecture
 

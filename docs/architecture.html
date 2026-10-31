@@ -468,11 +468,11 @@
   <p>SampleScene in play. The bars live on the player. The hotbar is four slots. Slot 1 starts selected.</p>
   <div class="stage">
     <figure class="shot">
-      <img src="../Assets/Screenshots/tired-idle.png" alt="Character from behind, torch in the left hand, health and energy bars full, hotbar with the torch slot selected.">
+      <img src="../Assets/Game/Screenshots/tired-idle.png" alt="Character from behind, torch in the left hand, health and energy bars full, hotbar with the torch slot selected.">
       <figcaption>Full energy · upright idle · torch equipped</figcaption>
     </figure>
     <figure class="shot">
-      <img src="../Assets/Screenshots/tired-idle-side.png" alt="Character slumped forward in the tired idle, torch still in hand, energy bar nearly empty.">
+      <img src="../Assets/Game/Screenshots/tired-idle-side.png" alt="Character slumped forward in the tired idle, torch still in hand, energy bar nearly empty.">
       <figcaption>Energy under 20% · Tired blends to the slumped idle</figcaption>
     </figure>
   </div>
@@ -566,7 +566,7 @@
   </div>
 
   <h2 id="input">Hands on keys</h2>
-  <p>Actions live in <span class="path">Assets/Input/PlayerInputActions.inputactions</span>, map <code>Player</code>. The prefab sends Unity Events. It does not use a generated C# wrapper.</p>
+  <p>Actions live in <span class="path">Assets/Game/Input/PlayerInputActions.inputactions</span>, map <code>Player</code>. The prefab sends Unity Events. It does not use a generated C# wrapper.</p>
   <div class="split">
     <div class="mini">
       <h3>Body</h3>
@@ -840,7 +840,7 @@
   <div class="callout">New stairs: parent the steps, tag that parent <code>Stairs</code>, aim its forward uphill, and keep step renderers about 0.18–0.8 m deep so spacing can be measured. SampleScene is eight steps of 0.35 × 0.20, then a landing. The tag list is in <span class="path">ProjectSettings/TagManager.asset</span>.</div>
 
   <h2 id="animator">Animator</h2>
-  <p><span class="path">Assets/AnimatorControllers/MaleAnimator.controller</span>. Two layers. The base layer’s IK pass is on.</p>
+  <p><span class="path">Assets/Game/Animations/Controllers/MaleAnimator.controller</span>. Two layers. The base layer’s IK pass is on.</p>
   <div class="panel" aria-label="Animator layers">
     <svg viewBox="0 0 920 250" role="img">
       <title>Base layer and Hold layer</title>
@@ -880,7 +880,7 @@
       <tr><td><code>PistolRate</code></td><td>PlayerController</td><td>1 at idle and walk, up to sprint/walk while sprinting, so the pistol walk clip keeps up</td></tr>
     </tbody>
   </table>
-  <p>State names the scripts look up by string: <code>Walk Up Stairs</code>, <code>Run Up Stairs</code>, <code>Descend Stairs</code>, <code>Climb Over</code>, <code>Blend Tree</code>, <code>Torch Hold</code>, <code>Pistol Locomotion</code>. Clips sit in <span class="path">Assets/Models/Characters/LowPolyMale/Animations/</span> and retarget onto the humanoid. Pistol Locomotion is a 1D blend on <code>Speed</code>: 0 is <code>Remy@Pistol Idle</code>, 0.5 is <code>Remy@Pistol Walk</code>.</p>
+  <p>State names the scripts look up by string: <code>Walk Up Stairs</code>, <code>Run Up Stairs</code>, <code>Descend Stairs</code>, <code>Climb Over</code>, <code>Blend Tree</code>, <code>Torch Hold</code>, <code>Pistol Locomotion</code>. Clips sit in <span class="path">Assets/Game/Animations/Player/</span> and retarget onto the humanoid. Pistol Locomotion is a 1D blend on <code>Speed</code>: 0 is <code>Remy@Pistol Idle</code>, 0.5 is <code>Remy@Pistol Walk</code>.</p>
 
   <h2 id="camera">Camera</h2>
   <div class="panel" aria-label="Camera orbit">
@@ -897,7 +897,7 @@
       </g>
     </svg>
   </div>
-  <p><span class="path">ThirdPersonCamera</span> on <span class="path">Assets/Prefabs/Main Camera.prefab</span> finds <code>CameraTarget</code> under the player, and reads the Look action itself. Horizontal look is free until it is 135° off a straight rear view. Past that, the extra yaw turns the character and the framing stays put. While the pistol pose is in, and the player is not on stairs or climbing, that window eases to <code>pistolYawFromBehind</code> on <span class="path">ThirdPersonCamera</span>. The script default is 28°. Inside it, the mouse orbits and the body stays put. Past it, mouse yaw turns the body, and movement does not. The shoulder shift follows the camera orbit, so the character stays in frame while that view swings. The look point takes the full shift so a centered pistol view matches the facing. Once that pose is in, the camera sticks to the orbit instead of trailing the turn. Stairs keep the free window and their own facing. Climb and jump-down do not take the extra turn: the camera yaw is clamped and the extra mouse is dropped. The script runs at execution order 100, after movement and the climb warp. <code>CameraFollow.cs</code> is an older damper. No scene uses it. Cursor locks on start and frees on death.</p>
+  <p><span class="path">ThirdPersonCamera</span> on <span class="path">Assets/Game/Prefabs/Cameras/Main Camera.prefab</span> finds <code>CameraTarget</code> under the player, and reads the Look action itself. Horizontal look is free until it is 135° off a straight rear view. Past that, the extra yaw turns the character and the framing stays put. While the pistol pose is in, and the player is not on stairs or climbing, that window eases to <code>pistolYawFromBehind</code> on <span class="path">ThirdPersonCamera</span>. The script default is 28°. Inside it, the mouse orbits and the body stays put. Past it, mouse yaw turns the body, and movement does not. The shoulder shift follows the camera orbit, so the character stays in frame while that view swings. The look point takes the full shift so a centered pistol view matches the facing. Once that pose is in, the camera sticks to the orbit instead of trailing the turn. Stairs keep the free window and their own facing. Climb and jump-down do not take the extra turn: the camera yaw is clamped and the extra mouse is dropped. The script runs at execution order 100, after movement and the climb warp. <code>CameraFollow.cs</code> is an older damper. No scene uses it. Cursor locks on start and frees on death.</p>
 
   <h2 id="world">World</h2>
   <div class="grid">
@@ -927,7 +927,7 @@
     <kbd>Tools / Generate Low Poly Forest Terrain</kbd>
     <kbd>Tools / Populate with Pure Poly Nature Pack</kbd>
   </div>
-  <p class="caption">Those menus live under <span class="path">Assets/Editor/</span> and are not in a build. Rendering is URP, with <code>PC_RPAsset</code> and <code>Mobile_RPAsset</code> in <span class="path">Assets/Settings/</span>.</p>
+  <p class="caption">Those menus live under <span class="path">Assets/Game/Scripts/Editor/</span> and are not in a build. Rendering is URP, with <code>PC_RPAsset</code> and <code>Mobile_RPAsset</code> in <span class="path">Assets/Settings/</span>.</p>
 
   <h2 id="edit">Where to change things</h2>
   <table>

@@ -124,17 +124,17 @@ Use these. The phases say when.
 
 | Need | Already here |
 |---|---|
-| Him | `Assets/Prefabs/Player.prefab`. Male mesh, Humanoid, `MaleAnimator.controller` |
-| Her mesh | `Assets/Models/Characters/Ch44_nonPBR.fbx`. Imported as Humanoid (`animationType` 3). Same animator can drive her |
+| Him | `Assets/Game/Prefabs/Characters/Player.prefab`. Male mesh, Humanoid, `MaleAnimator.controller` |
+| Her mesh | `Assets/Game/Models/Characters/Ch44_nonPBR.fbx`. Imported as Humanoid (`animationType` 3). Same animator can drive her |
 | Third person | Cinemachine 6.6. `CinemachineThirdPersonFollow` on `Third Person Aim Camera`, obstacle avoidance already on. Look input is `CinemachineThirdPersonLook` on the `Third Person Aim` pivot. Menu: **Tools → Setup Cinemachine Camera** |
 | Old camera script | `ThirdPersonCamera.cs` is an empty leftover. Leave it on the prefab so old scenes do not lose the reference. Do not put new code in it |
 | Pistol | Hotbar slot 3, `PistolShot` hitscan, slide kick, tracer, gunshot audio. `ZombieController.Kill()` already plays the death clip |
-| Zombie | `Assets/Prefabs/Zombie.prefab`. Crawl, stand, scream, run, then chase. Death clip is in the controller |
+| Zombie | `Assets/Game/Prefabs/Characters/Zombie.prefab`. Crawl, stand, scream, run, then chase. Death clip is in the controller |
 | Tired body | Low energy blends in `Remy@Tired-Idle` through `PlayerVitals` and `PlayerController` |
-| Rain | `EnvironmentRain` starts in every scene on its own. Settings: `Assets/Resources/AmbienceSettings.asset` |
+| Rain | `EnvironmentRain` starts in every scene on its own. Settings: `Assets/Game/Resources/AmbienceSettings.asset` |
 | Night grade | `IndustrialYard_Night` already has a Global Volume profile |
 | Forest art | `Demo_01` / `Demo_01_Night`, Pure Poly trees, `New Forest Terrain` |
-| Yard art | `IndustrialYard_Night` plus `Assets/RPG_FPS_game_assets_industrial/` (hangars, containers, fences, smoke textures) |
+| Yard art | `IndustrialYard_Night` plus `Assets/Imported/Industrial/` (hangars, containers, fences, smoke textures) |
 | Interact key | **E**, action `Interact`. Today `PlayerController.OnInteract` only writes a log line |
 | Shoot key | Left mouse, action `Attack` |
 | UI stack | uGUI and TextMeshPro. Health bars are built by `VitalsHud` on the player canvas. Input is **Input System only** (`activeInputHandler: 1`) |
@@ -164,7 +164,7 @@ Use these. The phases say when.
 
 **Glue we are willing to write.** Short scripts that connect those pieces. No second camera system, no snow physics solver, no dialogue system, no inventory rewrite.
 
-**Scene instances hold the demo tuning.** `walkSpeed`, `sprintSpeed`, and starting energy are overrides on the player sitting in the demo scene. `Assets/Prefabs/Player.prefab` stays the gym character. SampleScene, Demo_01, and the night forest keep working.
+**Scene instances hold the demo tuning.** `walkSpeed`, `sprintSpeed`, and starting energy are overrides on the player sitting in the demo scene. `Assets/Game/Prefabs/Characters/Player.prefab` stays the gym character. SampleScene, Demo_01, and the night forest keep working.
 
 **One gameplay scene loaded at a time.** His yard unloads when her clearing loads. That avoids two players and two Cinemachine brains.
 
@@ -186,23 +186,23 @@ Use these. The phases say when.
 
 **Scenes**
 
-- `Assets/Scenes/Demo/Demo_Act1_Yard.unity`
-- `Assets/Scenes/Demo/Demo_Act2_Clearing.unity`
+- `Assets/Game/Scenes/Demo/Demo_Act1_Yard.unity`
+- `Assets/Game/Scenes/Demo/Demo_Act2_Clearing.unity`
 
-Act 1 starts as a duplicate of `Assets/Scenes/IndustrialYard_Night.unity`. In the Project window, select that scene and press **Cmd+D**, then move the copy to `Assets/Scenes/Demo/` and rename it. It already has night lighting and a volume. Walk it once.
+Act 1 starts as a duplicate of `Assets/Game/Scenes/IndustrialYard_Night.unity`. In the Project window, select that scene and press **Cmd+D**, then move the copy to `Assets/Game/Scenes/Demo/` and rename it. It already has night lighting and a volume. Walk it once.
 
 - If a natural corner already takes about 15 seconds at speed `2.4`, put the beats on that corner.
-- If the yard is tiny, extend it with containers and fence from `Assets/RPG_FPS_game_assets_industrial/`.
+- If the yard is tiny, extend it with containers and fence from `Assets/Imported/Industrial/`.
 - If the yard is huge, do not delete the city. Box in one 40×24 block with the concrete fence prefabs and play only inside it.
 
 Act 2 is a **new empty scene**, not a duplicate of the 250 m forest. A full duplicate is heavy and she would walk for minutes.
 
 - **File → New Scene**, choose the same URP setup the night scenes use.
-- Ground: a Unity plane scaled up, material `Assets/Materials/GroundMaterial.mat`, or a small terrain. The playable dirt only needs to cover the clearing.
-- Ring the clearing with a handful of Pure Poly tree prefabs dragged in from `Assets/Models/Forest` or `Assets/Models/Pure Poly`. A ring, not a forest generator.
+- Ground: a Unity plane scaled up, material `Assets/Game/Materials/GroundMaterial.mat`, or a small terrain. The playable dirt only needs to cover the clearing.
+- Ring the clearing with a handful of Pure Poly tree prefabs dragged in from `Assets/Game/Models/Forest` or `Assets/Imported/PurePoly`. A ring, not a forest generator.
 - Directional light: low angle, cool color, intensity under the yard’s night light so it feels like the same wrong weather.
 - Add a **Global Volume**. Profile: Color Adjustments with temperature pulled toward blue, exposure a little under 0, a light Vignette. Turn on fog in **Window → Rendering → Lighting → Environment**: linear or exponential, blue-grey, thick enough that trees a few meters out go soft.
-- Sky: `Assets/Materials/Skybox_Night.mat` if it fits, or the industrial night skybox.
+- Sky: `Assets/Game/Materials/Skybox_Night.mat` if it fits, or the industrial night skybox.
 
 If a duplicated scene hides meshes that you can still select, the old occlusion data is stale. **Window → Rendering → Occlusion Culling → Clear**, then bake later if you want it. Correctness first.
 
@@ -217,21 +217,21 @@ If a duplicated scene hides meshes that you can still select, the old occlusion 
 | `Stick_01` `Stick_02` `Stick_03` | Act 2 | Pickups |
 | `FirePit` | Act 2 | Where the fire will be |
 
-**Him, for the timing pass only.** Drag `Assets/Prefabs/Player.prefab` into Act 1 at `Spawn_Him`. On that **instance** (not the prefab asset):
+**Him, for the timing pass only.** Drag `Assets/Game/Prefabs/Characters/Player.prefab` into Act 1 at `Spawn_Him`. On that **instance** (not the prefab asset):
 
 - `PlayerController.walkSpeed = 2.4`
 - `PlayerController.sprintSpeed = 2.4`
 - Tag the root `Player` if the prefab is not already tagged. The zombie finds `Player`.
 
-**Zombie.** Drag `Assets/Prefabs/Zombie.prefab` onto `ZombieEncounter`. Rotate it so the crawl faces the direction he will arrive from. The script already turns to face the player and stays put until the animator reaches `Running`, then chases at `6.2` m/s. One shot calls `Kill()`. No AI changes in this phase.
+**Zombie.** Drag `Assets/Game/Prefabs/Characters/Zombie.prefab` onto `ZombieEncounter`. Rotate it so the crawl faces the direction he will arrive from. The script already turns to face the player and stays put until the animator reaches `Running`, then chases at `6.2` m/s. One shot calls `Kill()`. No AI changes in this phase.
 
-**Door visual.** A container door from `Assets/RPG_FPS_game_assets_industrial/Containers/` or a tall cube. It only has to read as a door. It does not open yet.
+**Door visual.** A container door from `Assets/Imported/Industrial/Containers/` or a tall cube. It only has to read as a door. It does not open yet.
 
 **Her stand-in.** The male player prefab is enough to time her space. Phase 3 swaps the mesh. Put three brown cylinders at the stick markers (scale about `0.08, 0.6, 0.08`, rotated so they lie on the ground). Put a circle of small rocks or boxes at `FirePit`.
 
 **Fences.** Real fence meshes where they look right. Where they would look fake, empty objects with Box Colliders, named `Bounds`, layer Default. About 2 m tall. Leave no gap at the corners. She must not be able to reach the big forest because that forest is not in this scene.
 
-**Camera for the timing pass.** Drag `Assets/Prefabs/Main Camera.prefab` and `Assets/Prefabs/Cinemachine Cameras.prefab` into each scene if the duplicate did not bring them. Press Play. WASD, mouse look. If the brain has no follow target, assign the player’s `Third Person Aim` pivot the same way the other night scenes do, or run **Tools → Setup Cinemachine Camera** and then re-check it did not rewrite a scene you did not mean to touch. That menu lists specific scene paths. Prefer assigning the follow target by hand in the two new scenes.
+**Camera for the timing pass.** Drag `Assets/Game/Prefabs/Cameras/Main Camera.prefab` and `Assets/Game/Prefabs/Cameras/Cinemachine Cameras.prefab` into each scene if the duplicate did not bring them. Press Play. WASD, mouse look. If the brain has no follow target, assign the player’s `Third Person Aim` pivot the same way the other night scenes do, or run **Tools → Setup Cinemachine Camera** and then re-check it did not rewrite a scene you did not mean to touch. That menu lists specific scene paths. Prefer assigning the follow target by hand in the two new scenes.
 
 **Clock.** Start Play at `Spawn_Him`, walk (do not sprint) the intended route, start the watch when the camera lets you move, stop when the zombie is clearly in view. Move `ZombieEncounter` until that is 12–18 seconds. Then walk to the door and confirm it is only a few more seconds.
 
@@ -268,7 +268,7 @@ public UnityEvent Killed;
 
 At the end of `Kill()`, call `Killed?.Invoke();`. Nothing else in that class changes. Chase, death clip, and the player-touch death stay.
 
-**Interact.** New files under `Assets/Scripts/Demo/`.
+**Interact.** New files under `Assets/Game/Scripts/Demo/`.
 
 `IInteractable.cs`
 
@@ -352,15 +352,15 @@ On that same instance’s **Player Input** component (Invoke Unity Events), clea
 
 ### How
 
-**Prefab.** Duplicate `Assets/Prefabs/Player.prefab` to `Assets/Prefabs/Demo/Player_Her.prefab`.
+**Prefab.** Duplicate `Assets/Game/Prefabs/Characters/Player.prefab` to `Assets/Game/Prefabs/Demo/Player_Her.prefab`.
 
 Do **not** run **Tools → Player → Swap Model**. That menu writes the shared `Player.prefab` and would replace him in every scene.
 
 Open `Player_Her` in prefab mode:
 
 - Under `ModelSlot`, delete the male mesh child.
-- Drag `Assets/Models/Characters/Ch44_nonPBR.fbx` under `ModelSlot`. Local position and rotation `0`, scale `1`.
-- On that child, assign `Assets/AnimatorControllers/MaleAnimator.controller`, `Apply Root Motion` off. `PlayerAvatar.Bind` does this again at runtime if `animatorController` is set on the root.
+- Drag `Assets/Game/Models/Characters/Ch44_nonPBR.fbx` under `ModelSlot`. Local position and rotation `0`, scale `1`.
+- On that child, assign `Assets/Game/Animations/Controllers/MaleAnimator.controller`, `Apply Root Motion` off. `PlayerAvatar.Bind` does this again at runtime if `animatorController` is set on the root.
 - On the root `PlayerAvatar`, set `modelPrefab` to the Ch44 FBX.
 - Press Play in Act 2 with this prefab at `Spawn_Her`. If the feet float or sink, move `ModelSlot` on Y until the soles meet the bottom of the capsule. Do not scale the capsule and do not scale the FBX root away from `1` unless the mesh is huge. Ch44 and the male share a Humanoid rig, so walk, strafe, and tired idle retarget with no new controller.
 
@@ -425,7 +425,7 @@ If Ch44 reads as the wrong person once you see her, swap the FBX under `ModelSlo
 
 ### How
 
-**Menu scene.** `Assets/Scenes/Demo/Demo_MainMenu.unity`.
+**Menu scene.** `Assets/Game/Scenes/Demo/Demo_MainMenu.unity`.
 
 Canvas (Screen Space Overlay):
 
@@ -505,11 +505,11 @@ The gameplay camera is already a Cinemachine Camera named `Third Person Aim Came
 
 **Timeline.** **Window → Sequencing → Timeline.** On an object `Director_Act1Opening`:
 
-- Create `Assets/Timelines/Act1_Opening.playable`
+- Create `Assets/Game/Timelines/Act1_Opening.playable`
 - **Cinemachine Track**, bind the Brain
 - Drag cinematic cameras onto the track as shots
 - **Animation Track** on a full-screen black `Image`’s `CanvasGroup`, key `alpha` from `1` to `0` over the first `0.6` s. The fade is Timeline, not a fader script
-- **Signal Track** on the last frame. Create `Assets/Timelines/Signals/EnableControl.signal`. Add a **Signal Receiver** on the director. The signal calls `Playgate.EnableControl`
+- **Signal Track** on the last frame. Create `Assets/Game/Timelines/Signals/EnableControl.signal`. Add a **Signal Receiver** on the director. The signal calls `Playgate.EnableControl`
 
 `Playgate.cs`:
 
@@ -531,7 +531,7 @@ The gameplay camera is already a Cinemachine Camera named `Third Person Aim Came
 
 He is standing. He is not lying down. Reason, so we do not lose a day: `PlayerController` writes the Animator every frame (`Speed`, tired, pistol). A get-up clip on that same Animator fights the controller. The tired idle we already have, plus the camera move from the yard to his face, reads as waking up. A real get-up is an optional extra in Phase 6, behind a four-line pause in the controller.
 
-**Door, the scene-change camera.** `Assets/Timelines/Act1_Door.playable`, about 4 s. `DoorGate` no longer calls `LoadScene` itself. It swings the hinge, deactivates input, and plays this director.
+**Door, the scene-change camera.** `Assets/Game/Timelines/Act1_Door.playable`, about 4 s. `DoorGate` no longer calls `LoadScene` itself. It swings the hinge, deactivates input, and plays this director.
 
 | Time | Shot |
 |---|---|
@@ -542,7 +542,7 @@ He is standing. He is not lying down. Reason, so we do not lose a day: `PlayerCo
 
 This is the cinematic camera transition in the demo. If the shots feel wrong later, change cameras on this track. Keep the signal at the end.
 
-**Act 2 opening.** `Assets/Timelines/Act2_Opening.playable`, about 9 s. Same `Playgate` pattern. Her `PlayerInput` starts deactivated.
+**Act 2 opening.** `Assets/Game/Timelines/Act2_Opening.playable`, about 9 s. Same `Playgate` pattern. Her `PlayerInput` starts deactivated.
 
 | Time | Shot |
 |---|---|
@@ -551,7 +551,7 @@ This is the cinematic camera transition in the demo. If the shots feel wrong lat
 | 3.5–7.0 | `VCam_HerClose` |
 | 7.0 | Signal enables control and shows `her.cold` |
 
-**Fire.** `FirePit.Lit` plays `Assets/Timelines/Act2_Fire.playable` instead of showing the card immediately. Input off at the start.
+**Fire.** `FirePit.Lit` plays `Assets/Game/Timelines/Act2_Fire.playable` instead of showing the card immediately. Input off at the start.
 
 | Time | Shot |
 |---|---|
@@ -588,7 +588,7 @@ This is the cinematic camera transition in the demo. If the shots feel wrong lat
 **Pickup clip.**
 
 - Get one Humanoid FBX of a person picking an object up off the ground (Mixamo “Picking Up” or any clip with the same shape). Import **without** relying on its skin.
-- Rig: Animation Type **Humanoid**, Avatar Definition **Copy From Other Avatar**, source avatar = the male FBX’s avatar (`Assets/Models/Characters/LowPolyMale/Male.fbx`).
+- Rig: Animation Type **Humanoid**, Avatar Definition **Copy From Other Avatar**, source avatar = the male FBX’s avatar (`Assets/Game/Models/Characters/LowPolyMale/Male.fbx`).
 - Animation: Loop Time **off**, Root Transform Rotation and Position Y **Bake Into Pose**, so she does not drift out of the capsule.
 - On `MaleAnimator.controller`, add state `Pickup` with that clip.
 - Transition `Blend Tree → Pickup` on trigger `Pickup`, Has Exit Time off, duration about `0.1`.
@@ -638,7 +638,7 @@ If the event is missed, a coroutine of `clip.length` must still add the stick an
 
 ### How
 
-**Fire prefab.** `Assets/Prefabs/VFX/Campfire.prefab`. Three Particle Systems, shader `Universal Render Pipeline/Particles/Unlit`. Reuse the smoke texture already in `Assets/RPG_FPS_game_assets_industrial/Particles/Smoke` if the material is compatible. If it is a Built-in material, make a new URP particle material and only borrow the texture.
+**Fire prefab.** `Assets/Game/Prefabs/VFX/Campfire.prefab`. Three Particle Systems, shader `Universal Render Pipeline/Particles/Unlit`. Reuse the smoke texture already in `Assets/Imported/Industrial/Particles/Smoke` if the material is compatible. If it is a Built-in material, make a new URP particle material and only borrow the texture.
 
 | System | Role | Starting point |
 |---|---|---|
@@ -657,9 +657,9 @@ Child AudioSource, loop, play on awake, spatial blend `1`, volume low. Leave the
 - Open `Assets/Settings/PC_Renderer.asset` in the inspector.
 - **Add Renderer Feature → Decal**.
 - Technique: Automatic or Screen Space. The PC renderer is deferred (`m_RenderingMode: 2`), which is a good fit.
-- The pipeline global settings already point at a default decal material. Duplicate that material to `Assets/Materials/VFX/BloodDecal.mat`. Tint it `#6b1014`. Use a soft round alpha texture. A 64×64 white blur on black is enough. Assign it as the decal’s base map.
+- The pipeline global settings already point at a default decal material. Duplicate that material to `Assets/Game/Materials/VFX/BloodDecal.mat`. Tint it `#6b1014`. Use a soft round alpha texture. A 64×64 white blur on black is enough. Assign it as the decal’s base map.
 
-`Assets/Prefabs/VFX/BloodHit.prefab`:
+`Assets/Game/Prefabs/VFX/BloodHit.prefab`:
 
 - Particle System, **Stop Action: Destroy**, so the object cleans itself up. Burst `16` at time `0`, no looping. Lifetime `0.35`, gravity modifier `1`, start speed `1.5`, start size `0.05–0.12`, color `#8d1518`, world simulation, shape hemisphere.
 - Child **Decal Projector**, size about `0.45 × 0.45 × 0.4`, material `BloodDecal`, pivot so it projects along the hit normal.
@@ -704,20 +704,20 @@ Unity does not ship an interactive snow component. URP also does not honor the o
 
 ### How
 
-**Caps.** For each barrel, crate, wall top, and log that the opening camera or the walk will see: child cube, local scale `(width, 0.04, depth)`, sitting on the top face. Material `Assets/Materials/VFX/SnowCap.mat`: URP Lit, base color `#d5dde4`, smoothness `0.35`, metallic `0`.
+**Caps.** For each barrel, crate, wall top, and log that the opening camera or the walk will see: child cube, local scale `(width, 0.04, depth)`, sitting on the top face. Material `Assets/Game/Materials/VFX/SnowCap.mat`: URP Lit, base color `#d5dde4`, smoothness `0.35`, metallic `0`.
 
 Caps do **not** use the trail. The trail is a flat map of the ground. A roof that sampled it would lose its snow when someone walked underneath. Static caps are the object snow. The interactive part is the ground under the feet.
 
-**Blanket mesh.** Menu **Tools → Demo → Create Snow Blanket** in a new editor script `Assets/Editor/CreateSnowBlanketMesh.cs`.
+**Blanket mesh.** Menu **Tools → Demo → Create Snow Blanket** in a new editor script `Assets/Game/Scripts/Editor/CreateSnowBlanketMesh.cs`.
 
 - Width `40`, depth `24`, step `0.3` m. That is about 134 × 80 vertices. Fine for one clearing.
 - Build a `Mesh`, vertices on XZ, normals up, UVs unused (the shader uses world position).
-- `AssetDatabase.CreateAsset` to `Assets/Models/Demo/SnowBlanket_40x24.asset`.
+- `AssetDatabase.CreateAsset` to `Assets/Game/Models/Demo/SnowBlanket_40x24.asset`.
 - Make a second asset `SnowBlanket_24x24` for her clearing, or one mesh reused at different scales **only if** the world-space shader still matches. Prefer two meshes whose corner sits on the `SnowField` origin, scale `1`.
 
 Place the mesh on an object `SnowBlanket`. No collider. The real ground collider stays the thing they walk on. The blanket is visual, sitting about `0.01` m above the ground. Footsteps will not physically sink. The vertices under the feet drop, which is the read we want. Max drop is `0.045` m (“a little layer”).
 
-**Stamp shader.** `Assets/Shaders/SnowStampBlit.shader`. Full file:
+**Stamp shader.** `Assets/Game/Shaders/SnowStampBlit.shader`. Full file:
 
 ```hlsl
 Shader "Demo/SnowStampBlit"
@@ -795,7 +795,7 @@ SnowField.Stamp?.Invoke(transform.position);
 
 Steps and footprints stay on the same stride (`WalkStride` `2.05` m). No second step detector.
 
-**Shader Graph.** `Assets/Shaders/SnowBlanket.shadergraph`. Create → Shader Graph → URP → **Lit Shader Graph**.
+**Shader Graph.** `Assets/Game/Shaders/SnowBlanket.shadergraph`. Create → Shader Graph → URP → **Lit Shader Graph**.
 
 Graph settings: Opaque, Render Face Front.
 
@@ -826,9 +826,9 @@ Fragment:
 - Lerp `SnowColor` → `GroundColor` by `trail.r`. Connect to **Base Color**
 - Smoothness: lerp `0.4` → `0.08` by `trail.r`
 
-Assign the graph to `Assets/Materials/VFX/SnowBlanket.mat` and put that material on the mesh. `SnowField` overwrites origin, size, depth, and the trail texture on a runtime instance of the material (`renderer.material`), so the asset stays shared.
+Assign the graph to `Assets/Game/Materials/VFX/SnowBlanket.mat` and put that material on the mesh. `SnowField` overwrites origin, size, depth, and the trail texture on a runtime instance of the material (`renderer.material`), so the asset stays shared.
 
-**Falling snow.** `Assets/Prefabs/VFX/FallingSnow.prefab`. One Particle System:
+**Falling snow.** `Assets/Game/Prefabs/VFX/FallingSnow.prefab`. One Particle System:
 
 - Shape: box covering the clearing (about `24 × 8 × 24`), placed `6` m up
 - Gravity modifier `0.02`, start speed `0.4`, start size `0.03`, lifetime `8`
@@ -966,34 +966,34 @@ New files:
 
 | Path | Role |
 |---|---|
-| `Assets/Scenes/Demo/Demo_MainMenu.unity` | Start |
-| `Assets/Scenes/Demo/Demo_Act1_Yard.unity` | Him |
-| `Assets/Scenes/Demo/Demo_Act2_Clearing.unity` | Her |
-| `Assets/Prefabs/Demo/Player_Her.prefab` | Ch44 |
-| `Assets/Prefabs/VFX/Campfire.prefab` | Fire |
-| `Assets/Prefabs/VFX/BloodHit.prefab` | Blood |
-| `Assets/Prefabs/VFX/FallingSnow.prefab` | Flakes |
-| `Assets/Scripts/Demo/IInteractable.cs` | |
-| `Assets/Scripts/Demo/PlayerUse.cs` | E key lookup |
-| `Assets/Scripts/Demo/DoorGate.cs` | |
-| `Assets/Scripts/Demo/DemoLoadout.cs` | Pistol or empty hands |
-| `Assets/Scripts/Demo/StickBag.cs` | |
-| `Assets/Scripts/Demo/StickPickup.cs` | |
-| `Assets/Scripts/Demo/FirePit.cs` | |
-| `Assets/Scripts/Demo/DemoEnd.cs` | |
-| `Assets/Scripts/Demo/DemoCopy.cs` | The lines |
-| `Assets/Scripts/Demo/ObjectiveBanner.cs` | |
-| `Assets/Scripts/Demo/MainMenu.cs` | |
-| `Assets/Scripts/Demo/Playgate.cs` | Timeline signal |
-| `Assets/Scripts/Demo/SceneWeather.cs` | Rain on or off |
-| `Assets/Scripts/Demo/SnowField.cs` | Trail texture |
-| `Assets/Shaders/SnowStampBlit.shader` | |
-| `Assets/Shaders/SnowBlanket.shadergraph` | |
-| `Assets/Editor/CreateSnowBlanketMesh.cs` | |
-| `Assets/Timelines/Act1_Opening.playable` | |
-| `Assets/Timelines/Act1_Door.playable` | |
-| `Assets/Timelines/Act2_Opening.playable` | |
-| `Assets/Timelines/Act2_Fire.playable` | |
+| `Assets/Game/Scenes/Demo/Demo_MainMenu.unity` | Start |
+| `Assets/Game/Scenes/Demo/Demo_Act1_Yard.unity` | Him |
+| `Assets/Game/Scenes/Demo/Demo_Act2_Clearing.unity` | Her |
+| `Assets/Game/Prefabs/Demo/Player_Her.prefab` | Ch44 |
+| `Assets/Game/Prefabs/VFX/Campfire.prefab` | Fire |
+| `Assets/Game/Prefabs/VFX/BloodHit.prefab` | Blood |
+| `Assets/Game/Prefabs/VFX/FallingSnow.prefab` | Flakes |
+| `Assets/Game/Scripts/Demo/IInteractable.cs` | |
+| `Assets/Game/Scripts/Demo/PlayerUse.cs` | E key lookup |
+| `Assets/Game/Scripts/Demo/DoorGate.cs` | |
+| `Assets/Game/Scripts/Demo/DemoLoadout.cs` | Pistol or empty hands |
+| `Assets/Game/Scripts/Demo/StickBag.cs` | |
+| `Assets/Game/Scripts/Demo/StickPickup.cs` | |
+| `Assets/Game/Scripts/Demo/FirePit.cs` | |
+| `Assets/Game/Scripts/Demo/DemoEnd.cs` | |
+| `Assets/Game/Scripts/Demo/DemoCopy.cs` | The lines |
+| `Assets/Game/Scripts/Demo/ObjectiveBanner.cs` | |
+| `Assets/Game/Scripts/Demo/MainMenu.cs` | |
+| `Assets/Game/Scripts/Demo/Playgate.cs` | Timeline signal |
+| `Assets/Game/Scripts/Demo/SceneWeather.cs` | Rain on or off |
+| `Assets/Game/Scripts/Demo/SnowField.cs` | Trail texture |
+| `Assets/Game/Shaders/SnowStampBlit.shader` | |
+| `Assets/Game/Shaders/SnowBlanket.shadergraph` | |
+| `Assets/Game/Scripts/Editor/CreateSnowBlanketMesh.cs` | |
+| `Assets/Game/Timelines/Act1_Opening.playable` | |
+| `Assets/Game/Timelines/Act1_Door.playable` | |
+| `Assets/Game/Timelines/Act2_Opening.playable` | |
+| `Assets/Game/Timelines/Act2_Fire.playable` | |
 
 ---
 
