@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1601778465468990474
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7449255088698773938}
+  m_Layer: 0
+  m_Name: Grip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7449255088698773938
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1601778465468990474}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5778087, y: -0.5778087, z: -0.4075992, w: 0.4075992}
+  m_LocalPosition: {x: 0.91, y: 0.15, z: -1.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7460521317914287152}
+  m_LocalEulerAnglesHint: {x: 0, y: -109.6, z: -90}
 --- !u!1 &4032430513586801539
 GameObject:
   m_ObjectHideFlags: 0
@@ -9,6 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7460521317914287152}
+  - component: {fileID: 112491623593122732}
   m_Layer: 0
   m_Name: Pistol
   m_TagString: Untagged
@@ -30,8 +62,23 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6862588039880752710}
+  - {fileID: 7449255088698773938}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &112491623593122732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4032430513586801539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61f16c379e8b94dd480cd17333e7dc6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponGrip
+  grip: {fileID: 7449255088698773938}
+  leftHandGrip: {fileID: 0}
 --- !u!1001 &6392426510888917421
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43,6 +90,18 @@ PrefabInstance:
     - target: {fileID: -8700617353114198275, guid: 9e318d6223dce491cb7763854f956b59, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e318d6223dce491cb7763854f956b59, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e318d6223dce491cb7763854f956b59, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e318d6223dce491cb7763854f956b59, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 9e318d6223dce491cb7763854f956b59, type: 3}
       propertyPath: m_LocalPosition.x

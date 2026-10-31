@@ -234,6 +234,7 @@ public class PlayerController : MonoBehaviour
         }
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
+        WeaponHandIk.Ensure(animator);
         if (animator != null && animator.GetComponent<HeadLook>() == null)
             animator.gameObject.AddComponent<HeadLook>();
         if (GetComponent<RainFootsteps>() == null)
@@ -270,6 +271,8 @@ public class PlayerController : MonoBehaviour
             animator.applyRootMotion = false;
             if (Application.isPlaying && animator.GetComponent<StairFootIk>() == null)
                 animator.gameObject.AddComponent<StairFootIk>();
+            if (Application.isPlaying)
+                WeaponHandIk.Ensure(animator);
             if (Application.isPlaying && animator.GetComponent<HeadLook>() == null)
                 animator.gameObject.AddComponent<HeadLook>();
         }
@@ -1070,6 +1073,7 @@ public class PlayerController : MonoBehaviour
             animator = GetComponentInChildren<Animator>();
         if (animator != null && animator.GetComponent<StairFootIk>() == null)
             animator.gameObject.AddComponent<StairFootIk>();
+        WeaponHandIk.Ensure(animator);
     }
 
     private void SyncStairPhase()

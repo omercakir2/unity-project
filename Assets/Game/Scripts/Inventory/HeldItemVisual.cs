@@ -7,15 +7,6 @@ public class HeldItemVisual : MonoBehaviour
     [SerializeField] private GameObject torchPrefab;
     [SerializeField] private GameObject searchlightPrefab;
     [SerializeField] private GameObject pistolPrefab;
-    [SerializeField] private Vector3 torchLocalPosition = new Vector3(0.01f, 0.27f, 0.05f);
-    [SerializeField] private Vector3 torchLocalEuler = new Vector3(344.6f, 82.2f, 0f);
-    [SerializeField] private Vector3 searchlightLocalPosition = new Vector3(0.021f, 0.118f, 0.002f);
-    [SerializeField] private Vector3 searchlightLocalEuler = new Vector3(280.3f, 85f, 177.6f);
-    [Header("Pistol In Hand")]
-    [Tooltip("Gun offset in the right hand. The pistol idle and walk clips pose the arms. +Y runs from the wrist toward the fingertips. The hand bone is half scale, so 0.10 here is about 5 cm.")]
-    [SerializeField] private Vector3 pistolLocalPosition = new Vector3(0.02f, 0.28f, 0.06f);
-    [Tooltip("Gun rotation in the right hand, degrees. X of -90 points the barrel along the fingers.")]
-    [SerializeField] private Vector3 pistolLocalEuler = new Vector3(-91.9f, 6.94f, 80.79f);
 
     private const string HoldLayerName = "Hold";
     private const string HoldStateName = "Torch Hold";
@@ -261,6 +252,12 @@ public class HeldItemVisual : MonoBehaviour
             heldSearchlight.SetActive(showSearchlight);
         if (heldPistol != null && heldPistol.activeSelf != showPistol)
             heldPistol.SetActive(showPistol);
+        // Drop the holstered gun once the arm blend has finished, then spawn a fresh one next equip.
+        if (heldPistol != null && !showPistol && !selectedPistol)
+        {
+            Destroy(heldPistol);
+            heldPistol = null;
+        }
 
         float carryWeight = 0f;
         if (posedItem == PlayerInventory.TorchItemId)
@@ -316,10 +313,7 @@ public class HeldItemVisual : MonoBehaviour
             return;
 
         CurlFist(anim, searchPoseWeight);
-
-        Transform light = heldSearchlight.transform;
-        light.localPosition = searchlightLocalPosition;
-        light.localRotation = Quaternion.Euler(searchlightLocalEuler);
+        AlignHeld(heldSearchlight.transform);
     }
 
     private void SeatPistol()
@@ -337,16 +331,16 @@ public class HeldItemVisual : MonoBehaviour
         if (rightHand == null)
             return;
 
-        gunRecoil = Mathf.Lerp(gunRecoil, 0f, 1f - Mathf.Exp(-16f * Time.deltaTime));
         Transform gun = heldPistol.transform;
-        // Local +Y runs toward the fingertips, which is the barrel. Kick back along that axis.
-        gun.localPosition = pistolLocalPosition + Vector3.down * (0.05f * gunRecoil);
-        gun.localRotation = Quaternion.Euler(pistolLocalEuler);
         // The hand bone is scaled with the avatar. Keep the prefab's own size, and never mirror it:
         // a negative scale on this skinned mesh inverts the view and blows the bounds.
-        float boneScale = Mathf.Abs(rightHand.lossyScale.x);
-        if (boneScale > 0.01f)
-            gun.localScale = pistolAuthoredScale / boneScale;
+        FitScaleToBone(gun, rightHand, pistolAuthoredScale);
+        AlignHeld(gun);
+
+        gunRecoil = Mathf.Lerp(gunRecoil, 0f, 1f - Mathf.Exp(-16f * Time.deltaTime));
+        Vector3 barrel = gun.localRotation * Vector3.forward;
+        if (barrel.sqrMagnitude > 0.0001f)
+            gun.localPosition -= barrel.normalized * (0.05f * gunRecoil);
     }
 
     private bool CurlFist(Animator anim, float weight)
@@ -395,6 +389,7 @@ public class HeldItemVisual : MonoBehaviour
             return animator;
 
         animator = GetComponentInChildren<Animator>(true);
+        WeaponHandIk.Ensure(animator);
         return animator;
     }
 
@@ -418,7 +413,7 @@ public class HeldItemVisual : MonoBehaviour
 
         heldTorch = Instantiate(torchPrefab, hand);
         heldTorch.name = "HeldTorch";
-        ApplyGrip(heldTorch.transform, torchLocalPosition, torchLocalEuler);
+        AlignHeld(heldTorch.transform);
         DisableColliders(heldTorch);
     }
 
@@ -442,7 +437,7 @@ public class HeldItemVisual : MonoBehaviour
 
         heldSearchlight = Instantiate(searchlightPrefab, hand);
         heldSearchlight.name = "HeldSearchlight";
-        ApplyGrip(heldSearchlight.transform, searchlightLocalPosition, searchlightLocalEuler);
+        AlignHeld(heldSearchlight.transform);
         DisableColliders(heldSearchlight);
     }
 
@@ -470,15 +465,31 @@ public class HeldItemVisual : MonoBehaviour
         pistolAuthoredScale = new Vector3(Mathf.Abs(authored.x), Mathf.Abs(authored.y), Mathf.Abs(authored.z));
         if (pistolAuthoredScale.sqrMagnitude < 0.0001f)
             pistolAuthoredScale = Vector3.one;
-        ApplyGrip(heldPistol.transform, pistolLocalPosition, pistolLocalEuler);
+        FitScaleToBone(heldPistol.transform, hand, pistolAuthoredScale);
+        AlignHeld(heldPistol.transform);
         DisableColliders(heldPistol);
         SilenceImportedSceneObjects(heldPistol);
     }
 
-    private static void ApplyGrip(Transform item, Vector3 localPosition, Vector3 localEuler)
+    private static void AlignHeld(Transform item)
     {
-        item.localPosition = localPosition;
-        item.localRotation = Quaternion.Euler(localEuler);
+        WeaponGrip grip = item.GetComponent<WeaponGrip>();
+        if (grip == null)
+        {
+            Debug.LogError("[Inventory] " + item.name + " has no WeaponGrip. The hold point lives on the prefab.");
+            return;
+        }
+
+        grip.AlignToParentOrigin();
+    }
+
+    private static void FitScaleToBone(Transform item, Transform bone, Vector3 authoredScale)
+    {
+        Vector3 boneScale = bone.lossyScale;
+        item.localScale = new Vector3(
+            authoredScale.x / Mathf.Max(0.0001f, Mathf.Abs(boneScale.x)),
+            authoredScale.y / Mathf.Max(0.0001f, Mathf.Abs(boneScale.y)),
+            authoredScale.z / Mathf.Max(0.0001f, Mathf.Abs(boneScale.z)));
     }
 
     private static void DisableColliders(GameObject item)
@@ -544,9 +555,9 @@ public class HeldItemVisual : MonoBehaviour
         if (pistolHand == null && heldPistol != null)
             Debug.LogError("[Inventory] Grip hand bone was not found.");
 
-        Attach(heldTorch, hand, torchLocalPosition, torchLocalEuler);
-        Attach(heldSearchlight, hand, searchlightLocalPosition, searchlightLocalEuler);
-        Attach(heldPistol, pistolHand, pistolLocalPosition, pistolLocalEuler);
+        Attach(heldTorch, hand, false, Vector3.one);
+        Attach(heldSearchlight, hand, false, Vector3.one);
+        Attach(heldPistol, pistolHand, true, pistolAuthoredScale);
     }
 
     private void Park(GameObject item)
@@ -557,50 +568,51 @@ public class HeldItemVisual : MonoBehaviour
         item.transform.SetParent(transform, false);
     }
 
-    private void Attach(GameObject item, Transform hand, Vector3 localPosition, Vector3 localEuler)
+    private void Attach(GameObject item, Transform hand, bool fitBoneScale, Vector3 authoredScale)
     {
         if (item == null || hand == null)
             return;
 
         bool active = item.activeSelf;
         item.transform.SetParent(hand, false);
-        ApplyGrip(item.transform, localPosition, localEuler);
+        if (fitBoneScale)
+            FitScaleToBone(item.transform, hand, authoredScale);
+        AlignHeld(item.transform);
         if (item.activeSelf != active)
             item.SetActive(active);
     }
 
     private Transform FindCarryHand()
     {
-        if (carryHand != null)
-            return carryHand;
-
-        Transform[] bones = GetComponentsInChildren<Transform>(true);
-        for (int i = 0; i < bones.Length; i++)
-        {
-            // The torch walk carries with the left hand. The right arm swings free.
-            if (bones[i].name.EndsWith("LeftHand"))
-            {
-                carryHand = bones[i];
-                return carryHand;
-            }
-        }
-
-        return null;
+        // The torch walk carries with the left hand. The right arm swings free.
+        return FindHumanBone(HumanBodyBones.LeftHand, "LeftHand", ref carryHand);
     }
 
     private Transform FindGripHand()
     {
-        if (gripHand != null)
-            return gripHand;
+        return FindHumanBone(HumanBodyBones.RightHand, "RightHand", ref gripHand);
+    }
+
+    private Transform FindHumanBone(HumanBodyBones bone, string suffix, ref Transform cache)
+    {
+        if (cache != null)
+            return cache;
+
+        Animator anim = FindAnimator();
+        if (anim != null && anim.isHuman)
+        {
+            cache = anim.GetBoneTransform(bone);
+            if (cache != null)
+                return cache;
+        }
 
         Transform[] bones = GetComponentsInChildren<Transform>(true);
         for (int i = 0; i < bones.Length; i++)
         {
-            if (bones[i].name.EndsWith("RightHand"))
-            {
-                gripHand = bones[i];
-                return gripHand;
-            }
+            if (!bones[i].name.EndsWith(suffix))
+                continue;
+            cache = bones[i];
+            return cache;
         }
 
         return null;

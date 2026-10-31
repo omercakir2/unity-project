@@ -284,6 +284,7 @@ public static class ApplyVisualPass
             flicker.baseIntensity = 4.5f;
             flicker.flickerIntensity = 2.2f;
             flicker.flickerSpeed = 12f;
+            WeaponGripSetup.ApplyToOpenTorch(root);
 
             PrefabUtility.SaveAsPrefabAsset(root, TorchPrefabPath);
             return "torch: ok length=" + length.ToString("0.00") + " scale=" + scale.ToString("0.00") + " mats=" + names;

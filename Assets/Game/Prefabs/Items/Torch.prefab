@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 779528554384249476}
   - component: {fileID: 1851145906586603}
   - component: {fileID: 9216648468120092024}
+  - component: {fileID: 2114133284066265425}
   m_Layer: 0
   m_Name: FlameLight
   m_TagString: Untagged
@@ -115,6 +116,66 @@ MonoBehaviour:
   flickerSpeed: 12
   colorFlickerAmount: 0.15
   flameParticles: {fileID: 0}
+--- !u!114 &2114133284066265425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207805058770602168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!1 &3559676733319027863
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3208401890235100850}
+  m_Layer: 0
+  m_Name: Grip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3208401890235100850
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3559676733319027863}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.10096703, y: 0.65144783, z: 0.08807915, w: -0.7467687}
+  m_LocalPosition: {x: 0.04818023, y: -0.2558728, z: -0.087794}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 902871443780154488}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5140706436894621468
 GameObject:
   m_ObjectHideFlags: 0
@@ -124,6 +185,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 902871443780154488}
+  - component: {fileID: 9145366129389630013}
   m_Layer: 0
   m_Name: Torch
   m_TagString: Untagged
@@ -146,8 +208,23 @@ Transform:
   m_Children:
   - {fileID: 2995982719863979034}
   - {fileID: 779528554384249476}
+  - {fileID: 3208401890235100850}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -62.8, y: 0, z: 0}
+--- !u!114 &9145366129389630013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5140706436894621468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61f16c379e8b94dd480cd17333e7dc6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponGrip
+  grip: {fileID: 3208401890235100850}
+  leftHandGrip: {fileID: 0}
 --- !u!1 &6846373104254657900
 GameObject:
   m_ObjectHideFlags: 0
@@ -176,7 +253,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 52.304573, y: 52.304573, z: 52.304573}
+  m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 902871443780154488}

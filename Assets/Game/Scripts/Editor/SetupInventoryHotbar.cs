@@ -46,6 +46,8 @@ public static class SetupInventoryHotbar
         if (pistolPrefab == null)
             return "missing-pistol-prefab";
 
+        WeaponGripSetup.Setup(false);
+
         InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/Game/Input/PlayerInputActions.inputactions");
         if (actions == null || actions.FindAction("Hotbar1", false) == null)
             return "missing-hotbar-actions";
@@ -67,8 +69,6 @@ public static class SetupInventoryHotbar
             heldObject.FindProperty("torchPrefab").objectReferenceValue = torchPrefab;
             heldObject.FindProperty("searchlightPrefab").objectReferenceValue = searchlightPrefab;
             heldObject.FindProperty("pistolPrefab").objectReferenceValue = pistolPrefab;
-            heldObject.FindProperty("pistolLocalPosition").vector3Value = new Vector3(0.02f, 0.28f, 0.06f);
-            heldObject.FindProperty("pistolLocalEuler").vector3Value = new Vector3(-90f, 0f, 0f);
             heldObject.ApplyModifiedPropertiesWithoutUndo();
 
             Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
@@ -359,6 +359,8 @@ public static class SetupInventoryHotbar
         if (pistolPrefab == null)
             return "missing-pistol-prefab";
 
+        WeaponGripSetup.Setup(false);
+
         GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
         try
         {
@@ -373,8 +375,6 @@ public static class SetupInventoryHotbar
 
             SerializedObject heldObject = new SerializedObject(held);
             heldObject.FindProperty("pistolPrefab").objectReferenceValue = pistolPrefab;
-            heldObject.FindProperty("pistolLocalPosition").vector3Value = new Vector3(0.02f, 0.28f, 0.06f);
-            heldObject.FindProperty("pistolLocalEuler").vector3Value = new Vector3(-90f, 0f, 0f);
             heldObject.ApplyModifiedPropertiesWithoutUndo();
 
             Transform slot = root.transform.Find("InventoryCanvas/Hotbar/Slot3");
