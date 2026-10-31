@@ -92,7 +92,7 @@ public class CorpseInspect : MonoBehaviour
         if (toCamera.sqrMagnitude < 0.0001f)
             return;
 
-        promptRoot.rotation = Quaternion.LookRotation(toCamera, Vector3.up);
+        promptRoot.rotation = Quaternion.LookRotation(toCamera, Vector3.up) * Quaternion.Euler(0f, 180f, 0f);
     }
 
     private void OnInteract(InputAction.CallbackContext context)
