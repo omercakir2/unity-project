@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Plays the crawl, stand, scream, and run sequence, then walks straight at the player.
 /// A pistol hit plays death. Touching the player ends the run.
+/// Stays frozen on the first crawl frame until a gate releases it.
 /// </summary>
 public class ZombieController : MonoBehaviour
 {
@@ -34,7 +35,10 @@ public class ZombieController : MonoBehaviour
     private bool deathHeld;
     private bool lowBody = true;
     private bool chasing;
+    private bool waitingForGate;
     private float verticalVelocity;
+
+    public bool IsWaitingForGate => waitingForGate;
 
     private readonly int dieHash = Animator.StringToHash("Die");
 
@@ -55,6 +59,8 @@ public class ZombieController : MonoBehaviour
 
         skins = GetComponentsInChildren<SkinnedMeshRenderer>(true);
         bakedSole = new Mesh();
+        if (waitingForGate)
+            PauseAnimator();
     }
 
     private void OnDestroy()
@@ -67,6 +73,8 @@ public class ZombieController : MonoBehaviour
     {
         FindPlayer();
         ApplyBodyShape();
+        if (waitingForGate)
+            PauseAnimator();
     }
 
     private void Update()
@@ -84,6 +92,13 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
+        if (waitingForGate)
+        {
+            PauseAnimator();
+            ApplyGravity();
+            return;
+        }
+
         FacePlayer();
         UpdateBodyShape();
         if (IsChasing())
@@ -93,16 +108,41 @@ public class ZombieController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!Application.isPlaying || dead)
+        if (!Application.isPlaying || dead || waitingForGate)
             return;
 
         TryCatchPlayer();
+    }
+
+    // Called by ZombieGate before the first frame, so the crawl clip does not advance.
+    public void HoldUntilGate()
+    {
+        if (dead)
+            return;
+
+        waitingForGate = true;
+        PauseAnimator();
+    }
+
+    public void Begin()
+    {
+        if (!waitingForGate)
+            return;
+
+        waitingForGate = false;
+        if (animator != null)
+            animator.speed = 1f;
+        Debug.Log("[Zombie] The player passed the gate. Starting.");
     }
 
     public void Kill()
     {
         if (dead)
             return;
+
+        waitingForGate = false;
+        if (animator != null)
+            animator.speed = 1f;
 
         dead = true;
         if (body != null)
@@ -356,5 +396,11 @@ public class ZombieController : MonoBehaviour
 
         animator.speed = 0f;
         deathHeld = true;
+    }
+
+    private void PauseAnimator()
+    {
+        if (animator != null)
+            animator.speed = 0f;
     }
 }

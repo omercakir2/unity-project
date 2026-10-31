@@ -14,6 +14,7 @@ public class ZombieCameraScare : MonoBehaviour
     private const float SubtitleFade = 0.25f;
 
     private AmbienceSettings settings;
+    private ZombieController controller;
     private AudioSource wtfSource;
     private AudioSource stingSource;
     private AudioClip wtf;
@@ -31,6 +32,7 @@ public class ZombieCameraScare : MonoBehaviour
     private void Awake()
     {
         settings = AmbienceSettings.LoadOrDefault();
+        controller = GetComponent<ZombieController>();
         CacheBodyPoints();
         wtf = Resources.Load<AudioClip>(WtfPath);
         sting = Resources.Load<AudioClip>(StingPath);
@@ -65,6 +67,9 @@ public class ZombieCameraScare : MonoBehaviour
     private void LateUpdate()
     {
         if (!Application.isPlaying)
+            return;
+
+        if (controller != null && controller.IsWaitingForGate)
             return;
 
         TickSubtitle();

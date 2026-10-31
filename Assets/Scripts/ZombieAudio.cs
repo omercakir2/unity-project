@@ -8,6 +8,7 @@ public class ZombieAudio : MonoBehaviour
     private const string ScreamClipPath = "Audio/Zombie/zombie-scream";
 
     private Animator animator;
+    private ZombieController controller;
     private AmbienceSettings settings;
     private AudioSource crawlSource;
     private AudioSource screamSource;
@@ -17,6 +18,7 @@ public class ZombieAudio : MonoBehaviour
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
+        controller = GetComponent<ZombieController>();
         settings = AmbienceSettings.LoadOrDefault();
         float crawl = CrawlLevel();
         float scream = ScreamLevel();
@@ -39,6 +41,13 @@ public class ZombieAudio : MonoBehaviour
     {
         if (!Application.isPlaying || silenced || animator == null || animator.runtimeAnimatorController == null)
             return;
+
+        if (controller != null && controller.IsWaitingForGate)
+        {
+            if (crawlSource != null && crawlSource.isPlaying)
+                crawlSource.Stop();
+            return;
+        }
 
         ApplyLevel(crawlSource, CrawlLevel());
         ApplyLevel(screamSource, ScreamLevel());
