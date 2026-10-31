@@ -50,7 +50,7 @@ public class HeadLook : MonoBehaviour
             return;
 
         Transform body = player != null ? player.transform : transform;
-        bool holdStill = player != null && player.IsTraversing;
+        bool holdStill = player != null && (player.IsTraversing || player.IsInspecting);
         if (!holdStill && AimPistolAtCrosshair(head))
             return;
 

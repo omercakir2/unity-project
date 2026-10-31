@@ -188,6 +188,12 @@ public class HeldItemVisual : MonoBehaviour
         if (layer < 0)
             return;
 
+        if (player != null && player.IsInspecting)
+        {
+            anim.SetLayerWeight(layer, 0f);
+            return;
+        }
+
         if (poseFrame == Time.frameCount)
             return;
         poseFrame = Time.frameCount;

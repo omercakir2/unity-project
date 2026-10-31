@@ -75,6 +75,8 @@ public class PistolShot : MonoBehaviour
     {
         if (held == null || inventory == null)
             return false;
+        if (player != null && player.IsInspecting)
+            return false;
         if (inventory.ActiveItemId != PlayerInventory.PistolItemId)
             return false;
         if (held.PistolPoseWeight < 0.55f)

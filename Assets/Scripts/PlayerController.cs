@@ -124,6 +124,34 @@ public class PlayerController : MonoBehaviour
 
     private enum TraversalKind { None, Climb, JumpDown }
     private TraversalKind traversal;
+    private bool inspectLocked;
+
+    public bool IsInspecting => inspectLocked;
+
+    public void SetInspectLock(bool locked)
+    {
+        inspectLocked = locked;
+        if (!locked)
+            return;
+
+        moveInput = Vector2.zero;
+        isSprinting = false;
+        velocity.x = 0f;
+        velocity.z = 0f;
+        planarSpeed = 0f;
+        planarSpeedVelocity = 0f;
+        visualSpeed = 0f;
+        if (animator == null)
+            return;
+
+        animator.SetFloat(speedHash, 0f);
+        animator.SetFloat(moveXHash, 0f);
+        animator.SetFloat(moveYHash, 0f);
+        animator.SetBool(isSprintingHash, false);
+        animator.ResetTrigger(jumpHash);
+        animator.ResetTrigger(climbHash);
+        animator.ResetTrigger(jumpDownHash);
+    }
     private float traversalStartTime;
     private float traversalDuration;
     private Vector3 traversalStart;
@@ -212,6 +240,8 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<RainFootsteps>();
         if (GetComponent<PlayerBreath>() == null)
             gameObject.AddComponent<PlayerBreath>();
+        if (GetComponent<CorpseInspect>() == null)
+            gameObject.AddComponent<CorpseInspect>();
         initialized = true;
         Debug.Log("[PlayerController] Successfully initialized.");
     }
@@ -330,6 +360,15 @@ public class PlayerController : MonoBehaviour
     {
         if (!initialized) return;
 
+        if (inspectLocked)
+        {
+            velocity.x = 0f;
+            velocity.z = 0f;
+            planarSpeed = 0f;
+            HandleGravity();
+            return;
+        }
+
         if (traversal == TraversalKind.Climb)
         {
             UpdateClimbFacing();
@@ -351,7 +390,7 @@ public class PlayerController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!initialized) return;
+        if (!initialized || inspectLocked) return;
 
         EnsureAnimator();
 
@@ -397,6 +436,7 @@ public class PlayerController : MonoBehaviour
 
     private void TryPerformJump()
     {
+        if (inspectLocked) return;
         if (Controller == null || !Controller.isGrounded) return;
         if (traversal != TraversalKind.None) return;
         if (vitals != null && !vitals.CanJump) return;
@@ -1196,7 +1236,7 @@ public class PlayerController : MonoBehaviour
         if (ikAnimator == null)
             return;
 
-        if (samplingStairClip || !IsOnStairs() || stairRoot == null || traversal != TraversalKind.None)
+        if (samplingStairClip || inspectLocked || !IsOnStairs() || stairRoot == null || traversal != TraversalKind.None)
         {
             ikAnimator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 0f);
             ikAnimator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0f);

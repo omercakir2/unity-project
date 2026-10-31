@@ -149,6 +149,7 @@ public class ZombieController : MonoBehaviour
             body.enabled = false;
         if (animator != null)
             animator.SetTrigger(dieHash);
+        gameObject.tag = CorpseInspect.InspectTag;
         GetComponent<ZombieAudio>()?.Silence();
         Debug.Log("[Zombie] Shot. Playing death.");
     }
