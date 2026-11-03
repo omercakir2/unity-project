@@ -23,6 +23,47 @@ public class InventoryHotbarView : MonoBehaviour
         [SerializeField] private GameObject pistolGlyph;
         [SerializeField] private TMP_Text selectionLabel;
 
+        public RectTransform Root => background != null ? background.transform.parent as RectTransform : null;
+        public UnityEngine.UI.Image Background => background;
+        public UnityEngine.UI.Image Highlight => highlight;
+
+        // The builder only gave Slot3 a pistol icon. Items can move now, so every
+        // slot needs every icon.
+        public void FillMissingGlyphs(SlotWidget source)
+        {
+            if (source == null || Root == null)
+                return;
+
+            torchGlyph = torchGlyph != null ? torchGlyph : CloneGlyph(source.torchGlyph);
+            searchlightGlyph = searchlightGlyph != null ? searchlightGlyph : CloneGlyph(source.searchlightGlyph);
+            pistolGlyph = pistolGlyph != null ? pistolGlyph : CloneGlyph(source.pistolGlyph);
+        }
+
+        public GameObject GlyphTemplate(string itemId)
+        {
+            if (itemId == PlayerInventory.TorchItemId)
+                return torchGlyph;
+            if (itemId == PlayerInventory.SearchlightItemId)
+                return searchlightGlyph;
+            if (itemId == PlayerInventory.PistolItemId)
+                return pistolGlyph;
+            return null;
+        }
+
+        private GameObject CloneGlyph(GameObject template)
+        {
+            if (template == null)
+                return null;
+
+            GameObject copy = UnityEngine.Object.Instantiate(template, Root, false);
+            copy.name = template.name;
+            copy.SetActive(false);
+            Transform index = Root.Find("Index");
+            if (index != null)
+                copy.transform.SetSiblingIndex(index.GetSiblingIndex());
+            return copy;
+        }
+
         public void Apply(bool occupied, string itemId, bool showPreview, bool active)
         {
             if (background != null)
@@ -53,20 +94,44 @@ public class InventoryHotbarView : MonoBehaviour
 
         private static string CaptionFor(string itemId)
         {
-            if (itemId == PlayerInventory.TorchItemId)
-                return "Fire Torch";
-            if (itemId == PlayerInventory.SearchlightItemId)
-                return "Light Ball";
-            if (itemId == PlayerInventory.PistolItemId)
-                return "Desert Eagle";
-            return null;
+            return ItemCatalog.DisplayName(itemId);
         }
+    }
+
+    public PlayerInventory Inventory => inventory;
+    public int SlotWidgetCount => slots == null ? 0 : slots.Length;
+
+    public SlotWidget GetWidget(int index)
+    {
+        return slots == null || index < 0 || index >= slots.Length ? null : slots[index];
     }
 
     private void Awake()
     {
         if (inventory == null)
             inventory = GetComponentInParent<PlayerInventory>();
+        if (!Application.isPlaying)
+            return;
+
+        FillMissingGlyphs();
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.GetComponent<InventoryBagView>() == null)
+            canvas.gameObject.AddComponent<InventoryBagView>();
+    }
+
+    private void FillMissingGlyphs()
+    {
+        if (slots == null)
+            return;
+
+        for (int i = 0; i < slots.Length; i++)
+        {
+            for (int j = 0; j < slots.Length; j++)
+            {
+                if (i != j && slots[i] != null)
+                    slots[i].FillMissingGlyphs(slots[j]);
+            }
+        }
     }
 
     private void OnEnable()

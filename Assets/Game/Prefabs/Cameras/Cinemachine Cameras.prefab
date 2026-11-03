@@ -45,6 +45,7 @@ GameObject:
   - component: {fileID: 6388645295173049142}
   - component: {fileID: 5446803318085700656}
   - component: {fileID: 8605031600775891030}
+  - component: {fileID: 1008751701050873156}
   m_Layer: 0
   m_Name: Third Person Aim Camera
   m_TagString: Untagged
@@ -154,6 +155,25 @@ MonoBehaviour:
   IgnoreTag: Player
   AimDistance: 80
   NoiseCancellation: 1
+--- !u!114 &1008751701050873156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2127556852911762093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e12952e338ae4396b055c6ae7f21d4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  player: {fileID: 0}
+  swayX: 0.7
+  bobY: 0.55
+  randomness: 0
+  stepTime: 0.1
+  smoothIn: 0.4
+  smoothOut: 0.6
 --- !u!1 &4169804123704974981
 GameObject:
   m_ObjectHideFlags: 0
@@ -166,6 +186,8 @@ GameObject:
   - component: {fileID: 4188509975647019670}
   - component: {fileID: 1348003881704102451}
   - component: {fileID: 5967605491645870861}
+  - component: {fileID: 7271986505429392105}
+  - component: {fileID: 4266590844274775853}
   m_Layer: 0
   m_Name: Pistol Aim Camera
   m_TagString: Untagged
@@ -275,3 +297,46 @@ MonoBehaviour:
   IgnoreTag: Player
   AimDistance: 80
   NoiseCancellation: 1
+--- !u!114 &7271986505429392105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4169804123704974981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e12952e338ae4396b055c6ae7f21d4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RunCameraShake
+  player: {fileID: 0}
+  swayX: 0.07
+  bobY: 0.03
+  randomness: 0.2
+  stepTime: 0.35
+  smoothIn: 0.12
+  smoothOut: 0.3
+--- !u!114 &4266590844274775853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4169804123704974981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00b2d199b96b516448144ab30fb26aed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseListener
+  ApplyAfter: 2
+  ChannelMask: 1
+  Gain: 1
+  Use2DDistance: 0
+  UseCameraSpace: 1
+  SignalCombinationMode: 0
+  ReactionSettings:
+    m_SecondaryNoise: {fileID: 0}
+    AmplitudeGain: 1
+    FrequencyGain: 1
+    Duration: 1
+    m_NoiseOffsets: {x: 0, y: 0, z: 0}

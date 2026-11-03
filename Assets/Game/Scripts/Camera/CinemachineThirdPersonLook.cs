@@ -15,6 +15,8 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     [SerializeField] private float movingLookLead = 14f;
     [SerializeField] private float idleYawSmooth = 0.16f;
     [SerializeField] private float movingYawSmooth = 0.08f;
+    [Tooltip("Real seconds for the pistol camera to slide to the other shoulder.")]
+    [SerializeField] private float shoulderSwapTime = 0.22f;
 
     public InputAxis HorizontalLook = new InputAxis
     {
@@ -46,6 +48,13 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     private CinemachineCamera pistolCamera;
     private InputActionReference lookReference;
     private InputAction aimAction;
+    // Editor script reloads would otherwise restore this as an empty, unbound action.
+    [System.NonSerialized] private InputAction swapShoulderAction;
+    private CinemachineThirdPersonFollow pistolFollow;
+    private float shoulderSide = 1f;
+    private float authoredShoulderSide = 1f;
+    private float shoulderTarget = 1f;
+    private float shoulderVelocity;
     private bool lookBound;
     private float baseFov = 60f;
     private float currentFov = 60f;
@@ -89,6 +98,7 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     {
         BindLook();
         BindAim();
+        BindSwapShoulder();
         AttachVirtualCamera();
         TagPlayerColliders();
         Cursor.lockState = CursorLockMode.Locked;
@@ -97,6 +107,8 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
 
     private void OnDestroy()
     {
+        if (swapShoulderAction != null)
+            swapShoulderAction.performed -= OnSwapShoulder;
         if (lookReference != null)
             Destroy(lookReference);
     }
@@ -112,6 +124,7 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
         VerticalLook.Value = pitch;
         ApplyLook(pitch, HorizontalLook.Value);
         UpdatePistolCamera();
+        UpdateShoulderSide();
         UpdateFieldOfView();
     }
 
@@ -208,6 +221,70 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
             else if (vcam.name == PistolCameraName)
                 pistolCamera = vcam;
         }
+
+        if (pistolCamera != null)
+        {
+            pistolFollow = pistolCamera.GetComponent<CinemachineThirdPersonFollow>();
+            if (pistolFollow != null)
+            {
+                shoulderSide = pistolFollow.CameraSide;
+                shoulderTarget = shoulderSide;
+                authoredShoulderSide = shoulderSide;
+            }
+        }
+    }
+
+    // CameraSide mirrors the authored shoulder offset, so 0 and 1 are the two
+    // matching over-the-shoulder views. Swap slides between them in real time,
+    // and the pistol hold follows the same amount.
+    private void UpdateShoulderSide()
+    {
+        if (pistolFollow == null)
+            return;
+
+        if (swapShoulderAction == null)
+            BindSwapShoulder();
+
+        // The pistol hold mirrors along with the camera so the gun stays on the camera side.
+        if (heldItems == null && player != null)
+            heldItems = player.GetComponent<HeldItemVisual>();
+        if (heldItems != null)
+            heldItems.PistolMirror = Mathf.Abs(shoulderSide - authoredShoulderSide);
+
+        if (Mathf.Approximately(shoulderSide, shoulderTarget))
+            return;
+
+        shoulderSide = Mathf.SmoothDamp(shoulderSide, shoulderTarget, ref shoulderVelocity,
+            Mathf.Max(0.01f, shoulderSwapTime), Mathf.Infinity, Time.unscaledDeltaTime);
+        if (Mathf.Abs(shoulderSide - shoulderTarget) < 0.001f)
+        {
+            shoulderSide = shoulderTarget;
+            shoulderVelocity = 0f;
+        }
+
+        pistolFollow.CameraSide = shoulderSide;
+    }
+
+    private void OnSwapShoulder(InputAction.CallbackContext context)
+    {
+        shoulderTarget = shoulderTarget > 0.5f ? 0f : 1f;
+        Debug.Log("[Camera] Pistol shoulder " + (shoulderTarget > 0.5f ? "authored" : "mirrored") + ".");
+    }
+
+    private void BindSwapShoulder()
+    {
+        if (swapShoulderAction != null)
+            return;
+
+        PlayerInput playerInput = player != null
+            ? player.GetComponent<PlayerInput>()
+            : FindAnyObjectByType<PlayerInput>();
+        if (playerInput == null || playerInput.actions == null)
+            return;
+
+        swapShoulderAction = playerInput.actions.FindAction("SwapShoulder", false);
+        if (swapShoulderAction != null)
+            swapShoulderAction.performed += OnSwapShoulder;
     }
 
     private void UpdatePistolCamera()

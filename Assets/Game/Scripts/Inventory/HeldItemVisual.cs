@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Cinemachine;
 
 [DefaultExecutionOrder(250)]
 public class HeldItemVisual : MonoBehaviour
@@ -7,6 +8,7 @@ public class HeldItemVisual : MonoBehaviour
     [SerializeField] private GameObject torchPrefab;
     [SerializeField] private GameObject searchlightPrefab;
     [SerializeField] private GameObject pistolPrefab;
+    [SerializeField] CinemachineImpulseSource impulse;
 
     private const string HoldLayerName = "Hold";
     private const string HoldStateName = "Torch Hold";
@@ -17,6 +19,7 @@ public class HeldItemVisual : MonoBehaviour
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int HoldRateHash = Animator.StringToHash("HoldRate");
     private static readonly int PistolHash = Animator.StringToHash("Pistol");
+    private static readonly int PistolSideHash = Animator.StringToHash("PistolSide");
 
     // Opened torch-carry curl so the fingers close around the flashlight instead of into the palm.
     private static readonly string[] FistBoneSuffixes =
@@ -56,11 +59,27 @@ public class HeldItemVisual : MonoBehaviour
     private float pistolPoseWeight;
     private float pistolPoseVelocity;
     private Transform[] fistBones;
+    private float pistolMirror;
+    private bool restHandsReady;
+    private Quaternion restRightHand = Quaternion.identity;
+    private Quaternion restLeftHand = Quaternion.identity;
+    private Animator sideParameterChecked;
+    private bool hasSideParameter;
 
     public float PistolPoseWeight => pistolPoseWeight;
+
+    // 0 holds the pistol right-handed as authored, 1 is the mirrored left-handed hold.
+    // The camera shoulder swap drives it.
+    public float PistolMirror
+    {
+        get => pistolMirror;
+        set => pistolMirror = Mathf.Clamp01(value);
+    }
     public float SearchPoseWeight => searchPoseWeight;
 
     private float gunRecoil;
+    
+
 
     private void Awake()
     {
@@ -74,6 +93,9 @@ public class HeldItemVisual : MonoBehaviour
     public void KickPistol()
     {
         gunRecoil = 1f;
+        // Hafif yukarı ve rastgele yana tepme
+        Vector3 kick = new Vector3(Random.Range(-0.3f, 0.3f), 1f, 0f);
+        impulse.GenerateImpulse(kick * 0.15f);
     }
 
     public bool TryGetMuzzle(out Vector3 origin, out Vector3 direction)
@@ -274,6 +296,25 @@ public class HeldItemVisual : MonoBehaviour
         ParkHoldIdle(anim, layer, wantTorch || wantSearchlight, idle);
         // The pistol clips replace locomotion. Jump, climb, and stairs keep their own states.
         anim.SetBool(PistolHash, selectedPistol);
+        if (HasSideParameter(anim))
+            anim.SetFloat(PistolSideHash, pistolMirror);
+    }
+
+    private bool HasSideParameter(Animator anim)
+    {
+        if (sideParameterChecked == anim)
+            return hasSideParameter;
+
+        sideParameterChecked = anim;
+        hasSideParameter = false;
+        AnimatorControllerParameter[] parameters = anim.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].nameHash == PistolSideHash)
+                hasSideParameter = true;
+        }
+
+        return hasSideParameter;
     }
 
     private void ParkHoldIdle(Animator anim, int layer, bool wantTorch, bool idle)
@@ -331,16 +372,82 @@ public class HeldItemVisual : MonoBehaviour
         if (rightHand == null)
             return;
 
+        // Past the middle of the side blend the mirrored clips have the gun arm on the left.
+        Transform leftHand = anim.GetBoneTransform(HumanBodyBones.LeftHand);
+        bool leftHanded = pistolMirror >= 0.5f && leftHand != null && CacheRestHands(anim);
+        Transform hand = leftHanded ? leftHand : rightHand;
+
         Transform gun = heldPistol.transform;
+        if (gun.parent != hand)
+            gun.SetParent(hand, false);
         // The hand bone is scaled with the avatar. Keep the prefab's own size, and never mirror it:
         // a negative scale on this skinned mesh inverts the view and blows the bounds.
-        FitScaleToBone(gun, rightHand, pistolAuthoredScale);
+        FitScaleToBone(gun, hand, pistolAuthoredScale);
         AlignHeld(gun);
+        if (leftHanded)
+            MirrorHoldToLeftHand(gun);
 
         gunRecoil = Mathf.Lerp(gunRecoil, 0f, 1f - Mathf.Exp(-16f * Time.deltaTime));
         Vector3 barrel = gun.localRotation * Vector3.forward;
         if (barrel.sqrMagnitude > 0.0001f)
             gun.localPosition -= barrel.normalized * (0.05f * gunRecoil);
+    }
+
+    // AlignHeld seats the gun for the right hand. Reflect that hold across the body's
+    // middle plane (avatar X) and express it in the left hand's rest frame. The pistol is
+    // symmetric, so a reflected forward and up give the same look as a mirrored mesh.
+    private void MirrorHoldToLeftHand(Transform gun)
+    {
+        Quaternion inRoot = restRightHand * gun.localRotation;
+        Vector3 forward = MirrorX(inRoot * Vector3.forward);
+        Vector3 up = MirrorX(inRoot * Vector3.up);
+        Quaternion leftInverse = Quaternion.Inverse(restLeftHand);
+        gun.localRotation = leftInverse * Quaternion.LookRotation(forward, up);
+        gun.localPosition = leftInverse * MirrorX(restRightHand * gun.localPosition);
+    }
+
+    private static Vector3 MirrorX(Vector3 v)
+    {
+        return new Vector3(-v.x, v.y, v.z);
+    }
+
+    // Root-relative hand rotations in the avatar's rest pose, which is left/right symmetric.
+    private bool CacheRestHands(Animator anim)
+    {
+        if (restHandsReady)
+            return true;
+        if (anim.avatar == null || !anim.avatar.isHuman)
+            return false;
+
+        SkeletonBone[] skeleton = anim.avatar.humanDescription.skeleton;
+        if (skeleton == null || skeleton.Length == 0)
+            return false;
+
+        restRightHand = RestRotation(anim, anim.GetBoneTransform(HumanBodyBones.RightHand), skeleton);
+        restLeftHand = RestRotation(anim, anim.GetBoneTransform(HumanBodyBones.LeftHand), skeleton);
+        restHandsReady = true;
+        return true;
+    }
+
+    private static Quaternion RestRotation(Animator anim, Transform bone, SkeletonBone[] skeleton)
+    {
+        Quaternion rotation = Quaternion.identity;
+        for (Transform cursor = bone; cursor != null && cursor != anim.transform; cursor = cursor.parent)
+        {
+            Quaternion local = cursor.localRotation;
+            for (int i = 0; i < skeleton.Length; i++)
+            {
+                if (skeleton[i].name == cursor.name)
+                {
+                    local = skeleton[i].rotation;
+                    break;
+                }
+            }
+
+            rotation = local * rotation;
+        }
+
+        return rotation;
     }
 
     private bool CurlFist(Animator anim, float weight)
@@ -542,6 +649,8 @@ public class HeldItemVisual : MonoBehaviour
         pistolPoseVelocity = 0f;
         fistBones = null;
         gunRecoil = 0f;
+        restHandsReady = false;
+        sideParameterChecked = null;
     }
 
     public void RebindHand()

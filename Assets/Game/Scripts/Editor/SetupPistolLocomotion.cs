@@ -9,6 +9,9 @@ public static class SetupPistolLocomotion
     private const string WalkPath = "Assets/Game/Animations/Player/Remy@Pistol Walk.fbx";
     private const string ControllerPath = "Assets/Game/Animations/Controllers/MaleAnimator.controller";
     private const string PistolStateName = "Pistol Locomotion";
+    private const string SpeedTreeName = "Pistol Locomotion Right";
+    private const string MirroredTreeName = "Pistol Locomotion Left";
+    private const string SideParameter = "PistolSide";
 
     [MenuItem("Tools/Setup Pistol Locomotion")]
     public static void ApplyFromMenu()
@@ -109,14 +112,14 @@ public static class SetupPistolLocomotion
         if (pistol == null)
             pistol = machine.AddState(PistolStateName, new Vector3(80f, 260f, 0f));
 
-        BlendTree tree = pistol.motion as BlendTree;
+        BlendTree tree = SpeedTree(pistol.motion as BlendTree);
         if (tree == null)
         {
             tree = new BlendTree();
             AssetDatabase.AddObjectToAsset(tree, controller);
         }
 
-        tree.name = PistolStateName;
+        tree.name = SpeedTreeName;
         tree.blendType = BlendTreeType.Simple1D;
         tree.blendParameter = "Speed";
         tree.useAutomaticThresholds = false;
@@ -125,7 +128,10 @@ public static class SetupPistolLocomotion
         tree.AddChild(walk, 0.5f);
         tree.minThreshold = 0f;
         tree.maxThreshold = 0.5f;
-        pistol.motion = tree;
+        // Keep an existing PistolSide wrapper. WireMirror rebuilds its mirrored half.
+        if (!(pistol.motion is BlendTree wrapper && wrapper.blendParameter == SideParameter))
+            pistol.motion = tree;
+        WireMirror(controller, pistol);
         pistol.iKOnFeet = true;
         pistol.writeDefaultValues = true;
         pistol.speed = 1f;
@@ -141,6 +147,93 @@ public static class SetupPistolLocomotion
         EditorUtility.SetDirty(tree);
         EditorUtility.SetDirty(controller);
         return "wired";
+    }
+
+    // The state's own tree once WireMirror has wrapped it, else the tree itself.
+    private static BlendTree SpeedTree(BlendTree stateTree)
+    {
+        if (stateTree == null || stateTree.blendParameter != SideParameter)
+            return stateTree;
+
+        ChildMotion[] children = stateTree.children;
+        return children.Length > 0 ? children[0].motion as BlendTree : null;
+    }
+
+    [MenuItem("Tools/Setup Pistol Mirror")]
+    public static void WireMirrorFromMenu()
+    {
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+        AnimatorState pistol = controller != null ? FindState(controller.layers[0].stateMachine, PistolStateName) : null;
+        if (pistol == null)
+        {
+            Debug.LogError("pistol-mirror: missing " + PistolStateName);
+            return;
+        }
+
+        WireMirror(controller, pistol);
+        AssetDatabase.SaveAssets();
+        Debug.Log("pistol-mirror: wired");
+    }
+
+    /// <summary>
+    /// Wraps the speed tree in a PistolSide blend: 0 is the authored right-handed hold,
+    /// 1 is the same clips mirrored by the humanoid rig, so the gun sits in the left hand.
+    /// </summary>
+    private static void WireMirror(AnimatorController controller, AnimatorState pistol)
+    {
+        EnsureFloat(controller, SideParameter, 0f);
+
+        BlendTree speed = SpeedTree(pistol.motion as BlendTree);
+        if (speed == null)
+            return;
+        speed.name = SpeedTreeName;
+
+        BlendTree side = pistol.motion as BlendTree;
+        BlendTree mirrored = null;
+        if (side != null && side.blendParameter == SideParameter)
+        {
+            ChildMotion[] old = side.children;
+            if (old.Length > 1)
+                mirrored = old[1].motion as BlendTree;
+        }
+        else
+        {
+            side = new BlendTree();
+            AssetDatabase.AddObjectToAsset(side, controller);
+        }
+
+        if (mirrored == null)
+        {
+            mirrored = new BlendTree();
+            AssetDatabase.AddObjectToAsset(mirrored, controller);
+        }
+
+        mirrored.name = MirroredTreeName;
+        mirrored.blendType = speed.blendType;
+        mirrored.blendParameter = speed.blendParameter;
+        mirrored.useAutomaticThresholds = false;
+        ChildMotion[] copies = speed.children;
+        for (int i = 0; i < copies.Length; i++)
+            copies[i].mirror = true;
+        mirrored.children = copies;
+        mirrored.minThreshold = speed.minThreshold;
+        mirrored.maxThreshold = speed.maxThreshold;
+
+        side.name = PistolStateName;
+        side.blendType = BlendTreeType.Simple1D;
+        side.blendParameter = SideParameter;
+        side.useAutomaticThresholds = false;
+        side.children = new ChildMotion[0];
+        side.AddChild(speed, 0f);
+        side.AddChild(mirrored, 1f);
+        side.minThreshold = 0f;
+        side.maxThreshold = 1f;
+        pistol.motion = side;
+
+        EditorUtility.SetDirty(speed);
+        EditorUtility.SetDirty(mirrored);
+        EditorUtility.SetDirty(side);
+        EditorUtility.SetDirty(controller);
     }
 
     private static void EnsureFloat(AnimatorController controller, string name, float defaultValue)

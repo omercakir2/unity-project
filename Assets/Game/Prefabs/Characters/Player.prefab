@@ -879,6 +879,7 @@ MonoBehaviour:
   movingLookLead: 14
   idleYawSmooth: 0.16
   movingYawSmooth: 0.08
+  shoulderSwapTime: 0.22
   HorizontalLook:
     Value: 0
     Center: 0
@@ -1128,6 +1129,7 @@ GameObject:
   - component: {fileID: 8415847964006251158}
   - component: {fileID: 3505207041875153866}
   - component: {fileID: 5056636538134890146}
+  - component: {fileID: 2835068493935532092}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1414,9 +1416,9 @@ MonoBehaviour:
   activeSlot: 0
   slots:
   - slotIndex: 0
-    occupied: 1
-    item: torch
-    preview: 1
+    occupied: 0
+    item: 
+    preview: 0
   - slotIndex: 1
     occupied: 1
     item: searchlight
@@ -1426,6 +1428,12 @@ MonoBehaviour:
     item: pistol
     preview: 1
   - slotIndex: 3
+    occupied: 0
+    item: 
+    preview: 0
+  bag: []
+  craft:
+    slotIndex: 0
     occupied: 0
     item: 
     preview: 0
@@ -1445,12 +1453,7 @@ MonoBehaviour:
   torchPrefab: {fileID: 5140706436894621468, guid: df69640242f004a70a1a582ff05601c5, type: 3}
   searchlightPrefab: {fileID: 5823359753970736860, guid: e2e891528742b457288fabdf89be0ff6, type: 3}
   pistolPrefab: {fileID: 4032430513586801539, guid: 15625673cb85d4b6690577a6d417398b, type: 3}
-  torchLocalPosition: {x: 0.01, y: 0.27, z: 0.05}
-  torchLocalEuler: {x: 344.6, y: 82.2, z: 0}
-  searchlightLocalPosition: {x: 0.021, y: 0.118, z: 0.002}
-  searchlightLocalEuler: {x: 280.3, y: 85, z: 177.6}
-  pistolLocalPosition: {x: -0.01, y: 0.38, z: 0.16}
-  pistolLocalEuler: {x: -78.9, y: -1.3, z: 80.79}
+  impulse: {fileID: 2835068493935532092}
 --- !u!114 &8415847964006251158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1506,6 +1509,60 @@ MonoBehaviour:
   range: 2.5
   holdSeconds: 2
   promptHeight: 1.05
+  lootItemId: fabric
+--- !u!114 &2835068493935532092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1653965703412253222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseSource
+  ImpulseDefinition:
+    ImpulseChannel: 1
+    ImpulseShape: 1
+    CustomImpulseShape:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ImpulseDuration: 0.2
+    ImpulseType: 0
+    DissipationRate: 0.25
+    RawSignal: {fileID: 0}
+    AmplitudeGain: 1
+    FrequencyGain: 1
+    RepeatMode: 0
+    Randomize: 1
+    TimeEnvelope:
+      AttackShape:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      DecayShape:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      AttackTime: 0
+      SustainTime: 0.2
+      DecayTime: 0.7
+      ScaleWithImpact: 1
+      HoldForever: 0
+    ImpactRadius: 100
+    DirectionMode: 0
+    DissipationMode: 2
+    DissipationDistance: 100
+    PropagationSpeed: 343
+  DefaultVelocity: {x: 0, y: -1, z: 0}
 --- !u!1 &1663799135258206891
 GameObject:
   m_ObjectHideFlags: 0

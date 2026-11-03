@@ -105,7 +105,7 @@ public class PlayerVitals : MonoBehaviour
     {
         if (frozeTime)
         {
-            Time.timeScale = 1f;
+            GameTime.SetPaused(this, false);
             frozeTime = false;
         }
 
@@ -139,7 +139,7 @@ public class PlayerVitals : MonoBehaviour
 
         IsDead = true;
         health = 0f;
-        Time.timeScale = 0f;
+        GameTime.SetPaused(this, true);
         frozeTime = true;
 
         if (input != null)
@@ -156,7 +156,7 @@ public class PlayerVitals : MonoBehaviour
         if (!frozeTime)
             return;
 
-        Time.timeScale = 1f;
+        GameTime.SetPaused(this, false);
         frozeTime = false;
     }
 

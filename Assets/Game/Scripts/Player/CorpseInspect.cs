@@ -1,10 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// Near a dead body tagged inspectable-kneel, shows a prompt and plays kneel, a short hold, then stand.
+/// The first search of each body finds a piece of fabric.
 /// </summary>
 public class CorpseInspect : MonoBehaviour
 {
@@ -15,8 +17,11 @@ public class CorpseInspect : MonoBehaviour
     [SerializeField] private float range = 2.5f;
     [SerializeField] private float holdSeconds = 2f;
     [SerializeField] private float promptHeight = 1.05f;
+    [SerializeField] private string lootItemId = PlayerInventory.FabricItemId;
 
+    private readonly HashSet<Transform> searched = new HashSet<Transform>();
     private PlayerController player;
+    private PlayerInventory inventory;
     private PlayerVitals vitals;
     private PlayerInput playerInput;
     private InputAction interactAction;
@@ -29,6 +34,7 @@ public class CorpseInspect : MonoBehaviour
         player = GetComponent<PlayerController>();
         vitals = GetComponent<PlayerVitals>();
         playerInput = GetComponent<PlayerInput>();
+        inventory = GetComponent<PlayerInventory>();
     }
 
     private void Start()
@@ -164,6 +170,8 @@ public class CorpseInspect : MonoBehaviour
             yield return null;
         }
 
+        Search(target);
+
         if (!anim.HasState(0, Animator.StringToHash(StandState)))
         {
             Debug.LogError("[Inspect] Kneel Stand state is missing on the player animator.");
@@ -179,6 +187,16 @@ public class CorpseInspect : MonoBehaviour
         anim.speed = 1f;
         anim.CrossFadeInFixedTime(pistol ? "Pistol Locomotion" : "Blend Tree", 0.22f, 0, 0f);
         Finish();
+    }
+
+    // A full backpack leaves the loot on the body for a later search.
+    private void Search(Transform target)
+    {
+        if (target == null || inventory == null || string.IsNullOrEmpty(lootItemId) || searched.Contains(target))
+            return;
+
+        if (inventory.TryAdd(lootItemId))
+            searched.Add(target);
     }
 
     private void Finish()

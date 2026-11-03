@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -39,6 +40,11 @@ public class ZombieController : MonoBehaviour
     private float verticalVelocity;
 
     public bool IsWaitingForGate => waitingForGate;
+    public bool IsDead => dead;
+    public bool IsChasing => !dead && !waitingForGate && IsRunning();
+    public Transform Player => player;
+
+    public event Action Released;
 
     private readonly int dieHash = Animator.StringToHash("Die");
 
@@ -56,6 +62,10 @@ public class ZombieController : MonoBehaviour
             gameObject.AddComponent<ZombieAudio>();
         if (GetComponent<ZombieCameraScare>() == null)
             gameObject.AddComponent<ZombieCameraScare>();
+        if (GetComponent<ZombieIntroCinematic>() == null)
+            gameObject.AddComponent<ZombieIntroCinematic>();
+        if (GetComponent<ZombieSlowMotion>() == null)
+            gameObject.AddComponent<ZombieSlowMotion>();
 
         skins = GetComponentsInChildren<SkinnedMeshRenderer>(true);
         bakedSole = new Mesh();
@@ -101,7 +111,7 @@ public class ZombieController : MonoBehaviour
 
         FacePlayer();
         UpdateBodyShape();
-        if (IsChasing())
+        if (IsRunning())
             Chase();
         ApplyGravity();
     }
@@ -133,6 +143,7 @@ public class ZombieController : MonoBehaviour
         if (animator != null)
             animator.speed = 1f;
         Debug.Log("[Zombie] The player passed the gate. Starting.");
+        Released?.Invoke();
     }
 
     public void Kill()
@@ -204,7 +215,7 @@ public class ZombieController : MonoBehaviour
         transform.position += toPlayer.normalized * (runSpeed * Time.deltaTime);
     }
 
-    private bool IsChasing()
+    private bool IsRunning()
     {
         if (animator == null)
             return false;
