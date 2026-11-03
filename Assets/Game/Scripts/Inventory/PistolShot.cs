@@ -9,6 +9,15 @@ public class PistolShot : MonoBehaviour
 {
     [SerializeField] private float range = 70f;
     [SerializeField] private float cooldown = 0.32f;
+    // No reload yet: the gun comes loaded and the reserve stays empty.
+    [SerializeField] private int magazineSize = 7;
+    [SerializeField] private int reserveAmmo = 0;
+
+    private int ammoInMagazine = -1;
+
+    public int AmmoInMagazine => ammoInMagazine < 0 ? magazineSize : ammoInMagazine;
+    public int ReserveAmmo => reserveAmmo;
+    public event System.Action AmmoChanged;
 
     private HeldItemVisual held;
     private PlayerInventory inventory;
@@ -21,17 +30,21 @@ public class PistolShot : MonoBehaviour
     private bool slideCached;
     private const string ShotResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_gunshot_03";
     private const string TailResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Gunshots/sfx_wpn_hgn_tail_01";
+    private const string DryResourcePath = "Audio/FreeWeaponSFX_v1.1/Handgun/Reload/sfx_wpn_hgn_reload_01_slideLock";
 
     private AudioSource audioSource;
     private AmbienceSettings settings;
     private AudioClip shotClip;
     private AudioClip tailClip;
+    private AudioClip dryClip;
 
     private void Awake()
     {
         held = GetComponent<HeldItemVisual>();
         inventory = GetComponent<PlayerInventory>();
         player = GetComponent<PlayerController>();
+        if (ammoInMagazine < 0)
+            ammoInMagazine = magazineSize;
         settings = AmbienceSettings.LoadOrDefault();
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
@@ -40,6 +53,7 @@ public class PistolShot : MonoBehaviour
         audioSource.dopplerLevel = 0f;
         shotClip = Resources.Load<AudioClip>(ShotResourcePath);
         tailClip = Resources.Load<AudioClip>(TailResourcePath);
+        dryClip = Resources.Load<AudioClip>(DryResourcePath);
         if (shotClip == null)
             Debug.LogWarning("[PistolShot] Missing gunshot at Resources/" + ShotResourcePath + ".");
         else
@@ -87,6 +101,15 @@ public class PistolShot : MonoBehaviour
             return false;
 
         nextShotTime = Time.time + cooldown;
+        if (AmmoInMagazine <= 0)
+        {
+            if (audioSource != null && dryClip != null)
+                audioSource.PlayOneShot(dryClip, 0.8f);
+            return false;
+        }
+
+        ammoInMagazine = AmmoInMagazine - 1;
+        AmmoChanged?.Invoke();
 
         Vector3 muzzle = transform.position + Vector3.up * 1.4f;
         Vector3 shotDirection = transform.forward;

@@ -117,6 +117,8 @@ public class InventoryHotbarView : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas != null && canvas.GetComponent<InventoryBagView>() == null)
             canvas.gameObject.AddComponent<InventoryBagView>();
+        if (canvas != null && canvas.GetComponent<AmmoHud>() == null)
+            canvas.gameObject.AddComponent<AmmoHud>();
     }
 
     private void FillMissingGlyphs()

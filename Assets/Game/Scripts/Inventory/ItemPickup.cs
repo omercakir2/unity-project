@@ -11,12 +11,21 @@ public class ItemPickup : MonoBehaviour
     [SerializeField] private string itemId = PlayerInventory.WoodStickItemId;
     [SerializeField] private float range = 2f;
     [SerializeField] private float promptHeight = 0.55f;
+    // Hotbar slot to put the item back into, or -1 for the usual backpack-first add.
+    [SerializeField] private int returnSlot = -1;
 
     private PlayerInventory inventory;
     private PlayerController player;
     private InputAction interactAction;
     private Transform promptRoot;
     private bool inRange;
+
+    // For pickups spawned at runtime. Call before Start so the prompt names the right item.
+    public void Configure(string id, int slot)
+    {
+        itemId = id;
+        returnSlot = slot;
+    }
 
     private void Start()
     {
@@ -94,7 +103,8 @@ public class ItemPickup : MonoBehaviour
 
     private void TakeItem()
     {
-        if (!inventory.TryAdd(itemId))
+        bool added = returnSlot >= 0 ? inventory.TryAddToSlot(itemId, returnSlot) : inventory.TryAdd(itemId);
+        if (!added)
             return;
 
         Destroy(gameObject);

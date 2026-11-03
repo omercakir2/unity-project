@@ -178,6 +178,32 @@ public class PlayerInventory : MonoBehaviour
         return true;
     }
 
+    // Back into a given hotbar slot when it is still free, otherwise the usual add.
+    public bool TryAddToSlot(string itemId, int slotIndex)
+    {
+        InventorySlotState slot = GetSlot(slotIndex);
+        if (string.IsNullOrEmpty(itemId) || slot == null || slot.occupied || !CanPlace(itemId, InventoryArea.Hotbar))
+            return TryAdd(itemId);
+
+        Put(slot, itemId);
+        Debug.Log("[Inventory] Returned " + itemId + " to slot " + (slotIndex + 1) + ".");
+        Changed?.Invoke();
+        ItemAdded?.Invoke(itemId);
+        return true;
+    }
+
+    // Removes the selected item, e.g. when it is thrown.
+    public bool TakeActive()
+    {
+        InventorySlotState slot = GetSlot(activeSlot);
+        if (slot == null || !slot.occupied)
+            return false;
+
+        Clear(slot);
+        Changed?.Invoke();
+        return true;
+    }
+
     public bool CanPlace(string itemId, InventoryArea area)
     {
         return area != InventoryArea.Hotbar || !ItemCatalog.IsBagOnly(itemId);

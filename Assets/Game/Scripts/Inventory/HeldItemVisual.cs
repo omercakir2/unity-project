@@ -76,6 +76,10 @@ public class HeldItemVisual : MonoBehaviour
         set => pistolMirror = Mathf.Clamp01(value);
     }
     public float SearchPoseWeight => searchPoseWeight;
+    public GameObject SearchlightPrefab => searchlightPrefab;
+
+    // The thrown ball replaces the carried one, so the carried one stays hidden while it fades out.
+    public bool HideSearchlight { get; set; }
 
     private float gunRecoil;
     
@@ -88,6 +92,8 @@ public class HeldItemVisual : MonoBehaviour
         player = GetComponent<PlayerController>();
         if (Application.isPlaying && GetComponent<PistolShot>() == null)
             gameObject.AddComponent<PistolShot>();
+        if (Application.isPlaying && GetComponent<LightBallThrow>() == null)
+            gameObject.AddComponent<LightBallThrow>();
     }
 
     public void KickPistol()
@@ -257,7 +263,8 @@ public class HeldItemVisual : MonoBehaviour
         bool showTorch = posedItem == PlayerInventory.TorchItemId
             && (selectedTorch || torchPoseWeight > PoseVisibleThreshold);
         bool showSearchlight = posedItem == PlayerInventory.SearchlightItemId
-            && (selectedSearchlight || searchPoseWeight > PoseVisibleThreshold);
+            && (selectedSearchlight || searchPoseWeight > PoseVisibleThreshold)
+            && !HideSearchlight;
         bool showPistol = posedItem == PlayerInventory.PistolItemId
             && (selectedPistol || pistolPoseWeight > PoseVisibleThreshold);
 
