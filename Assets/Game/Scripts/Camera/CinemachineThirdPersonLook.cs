@@ -113,6 +113,13 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
             Destroy(lookReference);
     }
 
+    /// <summary>Drops the look lead and aims where the body faces, e.g. after a teleport.</summary>
+    public void SnapToBody()
+    {
+        HorizontalLook.Value = 0f;
+        aimSynced = false;
+    }
+
     private void LateUpdate()
     {
         if (!Application.isPlaying)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 // Local rain around the player, plus a 2D ambience loop.
 // A field curtain stays near the player. A second, longer layer sits in front of the camera.
@@ -39,11 +40,31 @@ public class EnvironmentRain : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void StartRain()
     {
-        if (instance != null)
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        EnsureRain();
+    }
+
+    // The game can start indoors, so outdoor scenes loaded later bring the rain up themselves.
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        EnsureRain();
+    }
+
+    private static void EnsureRain()
+    {
+        if (instance != null || IndoorScene.IsActive)
             return;
 
         GameObject rainObject = new GameObject("Environment Rain");
         rainObject.AddComponent<EnvironmentRain>();
+    }
+
+    /// <summary>Removes the rain, e.g. when an indoor scene loads.</summary>
+    public static void Stop()
+    {
+        if (instance != null)
+            Destroy(instance.gameObject);
     }
 
     private void Awake()
