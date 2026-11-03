@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// When the gate releases the zombie, blends to a low camera in front of it for the crawl,
 /// stand, and scream, then blends back to the player once it starts running.
-/// Player input is off for the whole shot.
+/// Player input and the UI are off for the whole shot.
 /// </summary>
 [DisallowMultipleComponent]
 public class ZombieIntroCinematic : MonoBehaviour
@@ -72,6 +72,7 @@ public class ZombieIntroCinematic : MonoBehaviour
 
         IsPlaying = true;
         GameplayInput.SetBlocked(this, true);
+        CinematicUI.SetHidden(this, true);
         CinemachineBlendDefinition savedBlend = brain.DefaultBlend;
         brain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, blendTime);
 
@@ -129,6 +130,7 @@ public class ZombieIntroCinematic : MonoBehaviour
     {
         IsPlaying = false;
         GameplayInput.SetBlocked(this, false);
+        CinematicUI.SetHidden(this, false);
     }
 
     private Vector3 ShotPosition(Vector3 anchor, Vector3 facing, Vector3 side, float distance)

@@ -7,7 +7,12 @@ public class MinimapFollow : MonoBehaviour
 
     void LateUpdate()
     {
-        if (player == null) return;
+        if (player == null)
+        {
+            PlayerController controller = FindAnyObjectByType<PlayerController>();
+            if (controller == null) return;
+            player = controller.transform;
+        }
 
         Vector3 newPos = player.position;
         newPos.y = height;
