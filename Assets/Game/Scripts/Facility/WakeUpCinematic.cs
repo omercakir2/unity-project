@@ -52,8 +52,38 @@ public class WakeUpCinematic : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float breathVolume = 0.85f;
     [SerializeField] private float breathFadeTime = 5f;
 
+    [Header("Opening Lines")]
+    [Tooltip("Subtitles only, in time order. The voice is already inside the cinematic music.")]
+    [SerializeField] private TimedLine[] openingLines =
+    {
+        new TimedLine("The seventh mirror shows only what you've hidden", 0.5f, 4.5f),
+        new TimedLine("Six times you looked away. Six times you woke here.", 5.5f, 4.5f),
+        new TimedLine("This time, there is no one left to hide behind.", 10.5f, 4.5f),
+        new TimedLine("Wake up... wake up... wake up.", 15.5f, 4.5f),
+    };
+    [Tooltip("The music fades after the last line, so the voice is not cut off.")]
+    [SerializeField] private float musicFadeOutTime = 4f;
+
+    [Serializable]
+    private class TimedLine
+    {
+        public string text;
+        [Tooltip("Seconds after the shot starts.")]
+        public float start;
+        public float duration;
+
+        public TimedLine(string text, float start, float duration)
+        {
+            this.text = text;
+            this.start = start;
+            this.duration = duration;
+        }
+    }
+
     private const int ShotPriority = 100;
     private const string BreathFallbackPath = "Audio/Player/run-breath";
+    private const string MusicPath = "Audio/Music/scary_bg_and_whispers";
+    private const float MusicFadeInTime = 0.5f;
 
     private CinemachineBrain brain;
     private CinemachineCamera shot;
@@ -98,7 +128,9 @@ public class WakeUpCinematic : MonoBehaviour
             blurVolume.weight = 0f;
 
         memories = GetComponent<WakeUpMemories>();
+        MainThemeMusic.PlayOverride(this, MusicPath, s => s.cinematicMusicVolume, MusicFadeInTime, false);
         StartCoroutine(Play());
+        StartCoroutine(PlayOpeningLines());
     }
 
     private void OnDestroy()
@@ -210,6 +242,26 @@ public class WakeUpCinematic : MonoBehaviour
         Finished?.Invoke();
     }
 
+    private IEnumerator PlayOpeningLines()
+    {
+        float startedAt = Time.time;
+        float end = 0f;
+        for (int i = 0; i < openingLines.Length; i++)
+        {
+            TimedLine line = openingLines[i];
+            while (Time.time - startedAt < line.start)
+                yield return null;
+
+            Subtitles.Show(line.text, line.duration);
+            end = line.start + line.duration;
+        }
+
+        while (Time.time - startedAt < end)
+            yield return null;
+
+        MainThemeMusic.EndOverride(this, musicFadeOutTime);
+    }
+
     private IEnumerator Hold(Vector3 position, Vector3 lookAt, float duration)
     {
         float elapsed = 0f;
@@ -245,6 +297,7 @@ public class WakeUpCinematic : MonoBehaviour
     private void Release()
     {
         IsPlaying = false;
+        MainThemeMusic.EndOverride(this, musicFadeOutTime);
         GameplayInput.SetBlocked(this, false);
         CinematicUI.SetHidden(this, false);
         if (shot != null)

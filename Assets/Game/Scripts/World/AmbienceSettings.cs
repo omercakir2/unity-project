@@ -9,6 +9,8 @@ public class AmbienceSettings : ScriptableObject
 
     [Header("Main Theme")]
     [Range(0f, 1f)] public float themeVolume = 0.5f;
+    [Range(0f, 1f)] public float cinematicMusicVolume = 0.9f;
+    [Range(0f, 1f)] public float actionMusicVolume = 0.6f;
 
     [Header("Rain Audio")]
     [Range(0f, 1f)] public float rainVolume = 0.35f;

@@ -6,6 +6,9 @@ public class ZombieAudio : MonoBehaviour
 {
     private const string CrawlClipPath = "Audio/Zombie/zombie-crawling-sound";
     private const string ScreamClipPath = "Audio/Zombie/zombie-scream";
+    private const string ChaseMusicPath = "Audio/Music/theme_action";
+    private const float ChaseFadeInTime = 0.4f;
+    private const float ChaseFadeOutTime = 3f;
 
     private Animator animator;
     private ZombieController controller;
@@ -31,10 +34,16 @@ public class ZombieAudio : MonoBehaviour
     public void Silence()
     {
         silenced = true;
+        MainThemeMusic.EndOverride(this, ChaseFadeOutTime);
         if (crawlSource != null)
             crawlSource.Stop();
         if (screamSource != null)
             screamSource.Stop();
+    }
+
+    private void OnDestroy()
+    {
+        MainThemeMusic.EndOverride(this, ChaseFadeOutTime);
     }
 
     private void Update()
@@ -68,6 +77,7 @@ public class ZombieAudio : MonoBehaviour
         {
             screamPlayed = true;
             screamSource.Play();
+            MainThemeMusic.PlayOverride(this, ChaseMusicPath, s => s.actionMusicVolume, ChaseFadeInTime, true);
         }
     }
 

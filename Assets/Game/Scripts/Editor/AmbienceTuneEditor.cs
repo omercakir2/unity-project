@@ -7,6 +7,8 @@ public class SoundLevelsWindow : EditorWindow
     private static readonly string[] Properties =
     {
         "themeVolume",
+        "cinematicMusicVolume",
+        "actionMusicVolume",
         "rainVolume",
         "footstepVolume",
         "walkBreathVolume",
@@ -18,6 +20,8 @@ public class SoundLevelsWindow : EditorWindow
         "torchVolume",
         "pistolShotVolume",
         "pistolTailVolume",
+        "hitMarkerVolume",
+        "killMarkerVolume",
     };
 
     private SerializedObject settingsObject;

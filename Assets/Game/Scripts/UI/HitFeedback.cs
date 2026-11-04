@@ -55,8 +55,9 @@ public class HitFeedback : MonoBehaviour
         killClip = Resources.Load<AudioClip>(KillClipPath);
         if (hitClip == null)
             Debug.LogWarning("[HitFeedback] Missing hit sound at Resources/" + HitClipPath + ".");
+        // Kills reuse the hit sound, louder, unless they have a clip of their own.
         if (killClip == null)
-            Debug.LogWarning("[HitFeedback] Missing kill sound at Resources/" + KillClipPath + ".");
+            killClip = hitClip;
         Build();
     }
 
