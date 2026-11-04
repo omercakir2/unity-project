@@ -974,7 +974,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 3875530329
   m_fontColor: {r: 0.35, g: 0.9, b: 1, a: 0.9}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -987,7 +987,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1111,7 +1111,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294960729
   m_fontColor: {r: 0.35, g: 0.9, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1124,7 +1124,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1636,6 +1636,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: c4e1a007-6b2d-4e11-9a01-111111111107
     m_ActionName: 'Player/Aim[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6458a642-ae3f-4717-b99b-e02d6b63c0fe
+    m_ActionName: 'Player/Inventory[/Keyboard/tab]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5158c317-90c5-4d0b-9ded-aef061a85378
+    m_ActionName: 'Player/SwapShoulder[/Keyboard/q]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -1656,13 +1664,10 @@ MonoBehaviour:
   walkSpeed: 4
   sprintSpeed: 8
   rotationSmoothTime: 0.091
-  jumpHeight: 2.5
-  climbProbeDistance: 0.8
-  climbHeightMinFactor: 0.75
-  climbHeightMaxFactor: 1.25
-  jumpDownMinDrop: 0.45
-  jumpDownMaxDrop: 2.1
-  jumpDownProbeForward: 1.1
+  ledgeReach: 1.1
+  ledgeMaxAngle: 60
+  waistHeightFactor: 0.65
+  climbMaxHeightFactor: 2
   stairsTag: Stairs
   gravity: -25
   traversalMask:
@@ -1746,11 +1751,11 @@ MonoBehaviour:
   healthRegenWalkPerSecond: 3.84
   maxEnergy: 100
   energy: 100
-  sprintDrainPerSecond: 20
+  sprintDrainPerSecond: 14
   energyRegenIdlePerSecond: 20.8
   energyRegenWalkPerSecond: 13.66
-  jumpEnergyCostMin: 20
-  jumpEnergyCostMax: 25
+  jumpEnergyCostMin: 0
+  jumpEnergyCostMax: 0
   lowEnergyFraction: 0.2
 --- !u!114 &3505207041875153866
 MonoBehaviour:
@@ -4609,7 +4614,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294964717
   m_fontColor: {r: 0.93, g: 0.96, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -4622,7 +4627,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2

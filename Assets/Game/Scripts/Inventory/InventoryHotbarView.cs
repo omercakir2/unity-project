@@ -114,11 +114,17 @@ public class InventoryHotbarView : MonoBehaviour
             return;
 
         FillMissingGlyphs();
+        if (crosshair != null && crosshair.GetComponent<CrosshairSpread>() == null)
+            crosshair.AddComponent<CrosshairSpread>();
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas != null && canvas.GetComponent<InventoryBagView>() == null)
             canvas.gameObject.AddComponent<InventoryBagView>();
         if (canvas != null && canvas.GetComponent<AmmoHud>() == null)
             canvas.gameObject.AddComponent<AmmoHud>();
+        if (canvas != null && canvas.GetComponent<HitFeedback>() == null)
+            canvas.gameObject.AddComponent<HitFeedback>();
+        if (canvas != null && canvas.GetComponent<TraversalPrompt>() == null)
+            canvas.gameObject.AddComponent<TraversalPrompt>();
     }
 
     private void FillMissingGlyphs()

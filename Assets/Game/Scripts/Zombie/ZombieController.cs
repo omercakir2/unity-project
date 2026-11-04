@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Plays the crawl, stand, scream, and run sequence, then walks straight at the player.
-/// A pistol hit plays death. Touching the player ends the run.
+/// Enough pistol hits play death. Touching the player ends the run.
 /// Stays frozen on the first crawl frame until a gate releases it.
 /// </summary>
 public class ZombieController : MonoBehaviour
@@ -13,6 +13,9 @@ public class ZombieController : MonoBehaviour
     [SerializeField] private float turnSpeed = 540f;
     [SerializeField] private float gravity = -40f;
     [SerializeField] private float groundStick = 0.4f;
+
+    [Header("Health")]
+    [SerializeField] private int hitsToKill = 3;
 
     [Header("Standing Capsule")]
     [SerializeField] private float standingHeight = 1.7f;
@@ -32,6 +35,7 @@ public class ZombieController : MonoBehaviour
     private Transform player;
     private CharacterController playerBody;
     private PlayerVitals playerVitals;
+    private int hitsTaken;
     private bool dead;
     private bool deathHeld;
     private bool lowBody = true;
@@ -66,6 +70,8 @@ public class ZombieController : MonoBehaviour
             gameObject.AddComponent<ZombieIntroCinematic>();
         if (GetComponent<ZombieSlowMotion>() == null)
             gameObject.AddComponent<ZombieSlowMotion>();
+        if (GetComponent<ZombieBlood>() == null)
+            gameObject.AddComponent<ZombieBlood>();
 
         skins = GetComponentsInChildren<SkinnedMeshRenderer>(true);
         bakedSole = new Mesh();
@@ -144,6 +150,25 @@ public class ZombieController : MonoBehaviour
             animator.speed = 1f;
         Debug.Log("[Zombie] The player passed the gate. Starting.");
         Released?.Invoke();
+    }
+
+    /// <summary>Counts one pistol hit. Returns true when this hit killed the zombie.</summary>
+    public bool TakeHit(Vector3 point, Vector3 shotDirection)
+    {
+        if (dead)
+            return false;
+
+        hitsTaken++;
+        bool killed = hitsTaken >= hitsToKill;
+        GetComponent<ZombieBlood>()?.Play(point, shotDirection, killed);
+        if (killed)
+        {
+            Kill();
+            return true;
+        }
+
+        Debug.Log("[Zombie] Hit " + hitsTaken + "/" + hitsToKill + ".");
+        return false;
     }
 
     public void Kill()

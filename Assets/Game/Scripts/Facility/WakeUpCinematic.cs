@@ -60,6 +60,7 @@ public class WakeUpCinematic : MonoBehaviour
     private Image fade;
     private AudioSource breath;
     private Transform head;
+    private WakeUpMemories memories;
 
     public static bool IsPlaying { get; private set; }
     public event Action Finished;
@@ -96,6 +97,7 @@ public class WakeUpCinematic : MonoBehaviour
         if (blurVolume != null)
             blurVolume.weight = 0f;
 
+        memories = GetComponent<WakeUpMemories>();
         StartCoroutine(Play());
     }
 
@@ -108,6 +110,9 @@ public class WakeUpCinematic : MonoBehaviour
     private IEnumerator Play()
     {
         shot = CreateShotCamera();
+        if (memories != null)
+            memories.Play();
+
         Vector3 center = focusPoint != null ? focusPoint.position : capsule.transform.position + Vector3.up * 1.8f;
         Vector3 forward = Flat(capsule.transform.forward);
         float endAngle = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
@@ -170,6 +175,8 @@ public class WakeUpCinematic : MonoBehaviour
         }
 
         // Blink: the player is out of the capsule when the eyes open again.
+        if (memories != null)
+            memories.Stop();
         yield return FadeTo(1f, exitBlinkTime);
         capsule.SetOpenness(1f);
         PlaceFeet(exitPoint);

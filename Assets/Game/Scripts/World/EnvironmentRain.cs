@@ -83,6 +83,7 @@ public class EnvironmentRain : MonoBehaviour
         SetupAudio();
         SetupParticles();
         ApplyTuning();
+        gameObject.AddComponent<RainSplashes>();
     }
 
     private void OnDestroy()

@@ -33,6 +33,8 @@ public class AmbienceSettings : ScriptableObject
     [Range(0f, 1f)] public float pistolShotVolume = 0.35f;
     [Tooltip("The tail file is much quieter than the shot, so full level still sits under the crack.")]
     [Range(0f, 1f)] public float pistolTailVolume = 1f;
+    [Range(0f, 1f)] public float hitMarkerVolume = 0.6f;
+    [Range(0f, 1f)] public float killMarkerVolume = 0.8f;
 
     [Header("Rain Particles")]
     [Tooltip("Width and depth of the rain around the player, in meters.")]

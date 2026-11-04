@@ -204,7 +204,8 @@ public static class SetupCinemachineCamera
         follow.CameraDistance = distance;
         CinemachineThirdPersonFollow.ObstacleSettings avoid = follow.AvoidObstacles;
         avoid.Enabled = true;
-        avoid.CollisionFilter = ~0;
+        // See-through wire stays visible behind the player instead of pulling the camera in.
+        avoid.CollisionFilter = ~LayerMask.GetMask(SetupCameraIgnoreLayer.LayerName);
         avoid.IgnoreTag = "Player";
         avoid.CameraRadius = 0.2f;
         avoid.DampingIntoCollision = 0f;

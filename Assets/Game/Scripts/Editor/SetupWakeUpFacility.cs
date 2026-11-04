@@ -388,6 +388,7 @@ public static class SetupWakeUpFacility
         so.FindProperty("focusPoint").objectReferenceValue = focusPoint;
         so.FindProperty("blurVolume").objectReferenceValue = blur;
         so.ApplyModifiedPropertiesWithoutUndo();
+        SetupWakeUpMemories.AddTo(director);
 
         // The side door leads out to the yard. Coming back puts the player just inside it.
         SceneDoor door = NewDoor("Door To Yard", new Vector3(-0.6f, 0f, 14.8f), YardScenePath, FromFacilitySpawn);

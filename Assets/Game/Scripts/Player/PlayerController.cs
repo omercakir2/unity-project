@@ -9,21 +9,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField, Range(0.02f, 0.3f)] private float rotationSmoothTime = 0.08f;
 
-    [Header("Jump Settings")]
-    [SerializeField] private float jumpHeight = 2.5f;
-
-    [Header("Climb")]
-    [Tooltip("How far in front of the character we look for a half-height obstacle.")]
-    [SerializeField] private float climbProbeDistance = 0.8f;
-    [Tooltip("Obstacle height must be at least this fraction of half the controller height.")]
-    [SerializeField] private float climbHeightMinFactor = 0.75f;
-    [Tooltip("Obstacle height must be at most this fraction of half the controller height.")]
-    [SerializeField] private float climbHeightMaxFactor = 1.25f;
-
-    [Header("Jump Down")]
-    [SerializeField] private float jumpDownMinDrop = 0.45f;
-    [SerializeField] private float jumpDownMaxDrop = 2.1f;
-    [SerializeField] private float jumpDownProbeForward = 1.1f;
+    [Header("Vault / Climb (LedgeMarker)")]
+    [Tooltip("How far from the feet a marker edge can be and still be grabbed.")]
+    [SerializeField] private float ledgeReach = 1.1f;
+    [Tooltip("How far off the character's facing a marker edge can be, in degrees.")]
+    [SerializeField] private float ledgeMaxAngle = 60f;
+    [Tooltip("Climb Up ledges up to this fraction of the controller height use the waist-high climb; taller ones jump to a hang first.")]
+    [SerializeField] private float waistHeightFactor = 0.65f;
+    [Tooltip("Highest edge the character can reach, as a multiple of the controller height.")]
+    [SerializeField] private float climbMaxHeightFactor = 2f;
 
     [Header("Stairs")]
     [Tooltip("Uphill is the tagged object's forward, flattened on the ground.")]
@@ -68,6 +62,8 @@ public class PlayerController : MonoBehaviour
     public bool IsMoving => initialized && moveInput.magnitude > 0.1f;
     public bool IsGrounded => initialized && Controller != null && Controller.isGrounded;
     public bool IsTraversing => traversal != TraversalKind.None;
+    public float WalkSpeed => walkSpeed;
+    public float SprintSpeed => sprintSpeed;
 
     private bool sprintRecoverLatch;
 
@@ -99,9 +95,7 @@ public class PlayerController : MonoBehaviour
     private readonly int tiredHash = Animator.StringToHash("Tired");
     private readonly int pistolRateHash = Animator.StringToHash("PistolRate");
     private readonly int isSprintingHash = Animator.StringToHash("IsSprinting");
-    private readonly int jumpHash = Animator.StringToHash("Jump");
     private readonly int climbHash = Animator.StringToHash("Climb");
-    private readonly int jumpDownHash = Animator.StringToHash("JumpDown");
     private readonly int onStairsHash = Animator.StringToHash("OnStairs");
     private readonly int stairDirectionHash = Animator.StringToHash("StairDirection");
     private readonly int walkUpStairsHash = Animator.StringToHash("Walk Up Stairs");
@@ -122,7 +116,41 @@ public class PlayerController : MonoBehaviour
     private Vector3 lastPlanarDir = Vector3.forward;
     private const float GaitSmooth = 0.08f;
 
-    private enum TraversalKind { None, Climb, JumpDown }
+    private enum TraversalKind { None, Climb, Vault, HangUp, Drop }
+
+    private const string ClimbStateName = "Climb Over";
+    private const string VaultStateName = "Vault Over";
+    private const string HangStateName = "Hang Up";
+    private const string LandStateName = "Hard Landing";
+
+    // Normalized times in "Vault Over" (Vault Over Box): hands reach the top, leave it,
+    // the feet are down on the far side, and the clip is standing again.
+    private const float VaultEntryTime = 0.1f;
+    private const float VaultPlantTime = 0.18f;
+    private const float VaultReleaseTime = 0.3f;
+    private const float VaultLandTime = 0.42f;
+    private const float VaultExitTime = 0.5f;
+
+    // Climb Over leaves the crouch on top for the drop this far through "Climb Over",
+    // before that state blends back to locomotion.
+    private const float ClimbOverDropTime = 0.88f;
+    // "Hard Landing" starts about 2 m up, is on the ground here, and stands up by the exit.
+    private const float DropLandTime = 0.25f;
+    private const float DropExitTime = 0.9f;
+
+    // The hands leave the hips and reach for the ledge between these times in "Hang Up".
+    private const float HangReachStart = 0.28f;
+    private const float HangReachEnd = 0.5f;
+
+    private struct Ledge
+    {
+        public float Height;
+        public float Top;
+        public Vector3 Lip;
+        public Vector3 Into;
+        public Vector3 TopFeet;
+        public Vector3 FarFeet;
+    }
     private TraversalKind traversal;
     private bool inspectLocked;
 
@@ -148,9 +176,7 @@ public class PlayerController : MonoBehaviour
         animator.SetFloat(moveXHash, 0f);
         animator.SetFloat(moveYHash, 0f);
         animator.SetBool(isSprintingHash, false);
-        animator.ResetTrigger(jumpHash);
         animator.ResetTrigger(climbHash);
-        animator.ResetTrigger(jumpDownHash);
     }
     private float traversalStartTime;
     private float traversalDuration;
@@ -186,6 +212,11 @@ public class PlayerController : MonoBehaviour
     private Vector3 climbMountFeet;
     private float climbObstacleTop;
     private float climbGroundY;
+    private Vector3 vaultCarry;
+    private bool vaultReleased;
+    private bool climbOverPending;
+    private Vector3 dropFarFeet;
+    private float vaultLandY;
 
     private int ProbeMask => traversalMask.value == 0 ? Physics.DefaultRaycastLayers : traversalMask.value;
 
@@ -372,15 +403,10 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (traversal == TraversalKind.Climb)
-        {
-            UpdateClimbFacing();
-            return;
-        }
-
+        // Traversals place the body from its bones in LateUpdate.
         if (traversal != TraversalKind.None)
         {
-            UpdateTraversal();
+            UpdateClimbFacing();
             return;
         }
 
@@ -397,13 +423,33 @@ public class PlayerController : MonoBehaviour
 
         EnsureAnimator();
 
+        if (traversal == TraversalKind.Vault)
+        {
+            ApplyVaultWarp();
+            return;
+        }
+
+        if (traversal == TraversalKind.HangUp)
+        {
+            ApplyHangWarp();
+            return;
+        }
+
         if (traversal == TraversalKind.Climb)
         {
             float elapsed = Time.time - traversalStartTime;
             float climbTime = Mathf.Clamp01(elapsed / Mathf.Max(0.4f, traversalDuration));
             ApplyClimbWarp(climbTime);
-            if (climbTime >= 0.98f || elapsed > traversalDuration + 0.35f)
+            if (climbOverPending && climbTime >= ClimbOverDropTime)
+                BeginDrop();
+            else if (climbTime >= 0.98f || elapsed > traversalDuration + 0.35f)
                 FinishTraversal();
+            return;
+        }
+
+        if (traversal == TraversalKind.Drop)
+        {
+            ApplyDropWarp();
             return;
         }
 
@@ -437,45 +483,46 @@ public class PlayerController : MonoBehaviour
         stairContactTimer = 0.2f;
     }
 
+    /// <summary>
+    /// The vault or climb Space would start right now, if any. Drives the on-screen prompt.
+    /// </summary>
+    public bool TryGetAvailableTraversal(out LedgeType type)
+    {
+        type = LedgeType.Vault;
+        return CanStartTraversal() && TryGetLedge(out _, out type);
+    }
+
+    private bool CanStartTraversal()
+    {
+        if (!initialized || inspectLocked) return false;
+        if (Controller == null || !Controller.isGrounded) return false;
+        if (traversal != TraversalKind.None) return false;
+        return vitals == null || vitals.CanJump;
+    }
+
     private void TryPerformJump()
     {
-        if (inspectLocked) return;
-        if (Controller == null || !Controller.isGrounded) return;
-        if (traversal != TraversalKind.None) return;
-        if (vitals != null && !vitals.CanJump) return;
+        if (!CanStartTraversal()) return;
+
+        // There is no free jump: Space only vaults or climbs at a LedgeMarker.
+        if (!TryGetLedge(out Ledge ledge, out LedgeType type))
+            return;
+
         vitals?.SpendJumpEnergy();
-
-        if (TryGetClimb(out Vector3 climbEnd, out Vector3 landingFeet, out Vector3 lip, out float clearance, out float obstacleTop))
+        switch (type)
         {
-            climbLip = lip;
-            climbLandingFeet = landingFeet;
-            climbObstacleTop = obstacleTop;
-            climbGroundY = FeetWorld().y;
-            float footLift = 0.17f;
-            if (leftFoot != null && rightFoot != null)
-            {
-                float boneY = Mathf.Min(leftFoot.position.y, rightFoot.position.y);
-                float lift = boneY - climbGroundY;
-                if (lift > 0.02f && lift < 0.45f)
-                    footLift = lift;
-            }
-            climbMountFeet = landingFeet + Vector3.up * footLift;
-            BeginTraversal(TraversalKind.Climb, climbEnd, clearance, "Climb Over", climbHash);
-            Debug.Log("[PlayerController] Climb over performed.");
-            return;
+            case LedgeType.Vault:
+                BeginVault(ledge);
+                break;
+            case LedgeType.ClimbUp:
+                BeginLedgeClimb(ledge, ledge.Height <= Controller.height * waistHeightFactor);
+                break;
+            case LedgeType.ClimbOver:
+                BeginLedgeClimb(ledge, ledge.Height <= Controller.height * waistHeightFactor);
+                climbOverPending = true;
+                dropFarFeet = ledge.FarFeet;
+                break;
         }
-
-        if (!IsOnStairs() && TryGetJumpDown(out Vector3 landEnd))
-        {
-            BeginTraversal(TraversalKind.JumpDown, landEnd, 0.35f, "Jump Down", jumpDownHash);
-            Debug.Log("[PlayerController] Jump down performed.");
-            return;
-        }
-
-        velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        if (animator != null)
-            animator.SetTrigger(jumpHash);
-        Debug.Log("[PlayerController] Jump performed.");
     }
 
     private void HandleMovement()
@@ -731,167 +778,93 @@ public class PlayerController : MonoBehaviour
         return forward.normalized;
     }
 
-    private bool TryGetClimb(out Vector3 landing, out Vector3 landingFeet, out Vector3 lip, out float clearance, out float obstacleTop)
+    private void BeginVault(Ledge ledge)
     {
-        landing = default;
-        landingFeet = default;
-        lip = default;
-        clearance = 0f;
-        obstacleTop = 0f;
+        climbLip = ledge.Lip;
+        climbObstacleTop = ledge.Top;
+        climbGroundY = FeetWorld().y;
+        vaultReleased = false;
+        vaultLandY = transform.position.y + (ledge.FarFeet.y - climbGroundY);
+        BeginTraversal(TraversalKind.Vault, TransformFromFeet(ledge.FarFeet), ledge.Height + 0.15f, VaultStateName, 0, VaultEntryTime);
+        Debug.Log("[PlayerController] Vault performed.");
+    }
 
-        var cc = Controller;
-        float half = cc.height * 0.5f;
-        float minH = half * climbHeightMinFactor;
-        float maxH = half * climbHeightMaxFactor;
-        Vector3 feet = FeetWorld();
-        Vector3 forward = FlatForward();
-        int mask = ProbeMask;
-
-        float lowY = feet.y + minH * 0.45f;
-        float highY = feet.y + maxH + 0.2f;
-        Vector3 lowOrigin = new Vector3(feet.x, lowY, feet.z) + forward * 0.02f;
-        Vector3 highOrigin = new Vector3(feet.x, highY, feet.z) + forward * 0.02f;
-
-        bool lowBlocked = Physics.Raycast(lowOrigin, forward, out RaycastHit lowHit, climbProbeDistance, mask, QueryTriggerInteraction.Ignore);
-        if (!lowBlocked)
-            lowBlocked = Physics.SphereCast(lowOrigin, cc.radius * 0.75f, forward, out lowHit, climbProbeDistance, mask, QueryTriggerInteraction.Ignore);
-        if (!lowBlocked || lowHit.collider == null)
-            return false;
-        if (FindStairsRoot(lowHit.collider.transform) != null)
-            return false;
-
-        if (Physics.Raycast(highOrigin, forward, climbProbeDistance, mask, QueryTriggerInteraction.Ignore))
-            return false;
-
-        obstacleTop = lowHit.collider.bounds.max.y;
-        Vector3 topOrigin = lowHit.point + forward * 0.12f;
-        topOrigin.y = feet.y + cc.height + 0.75f;
-        if (Physics.Raycast(topOrigin, Vector3.down, out RaycastHit topHit, cc.height + 2f, mask, QueryTriggerInteraction.Ignore))
+    // Waist-high ledges go straight into the braced-hang climb; taller ones jump up to the hang first.
+    private void BeginLedgeClimb(Ledge ledge, bool fromWaist)
+    {
+        climbOverPending = false;
+        climbLip = ledge.Lip;
+        climbLandingFeet = ledge.TopFeet;
+        climbObstacleTop = ledge.Top;
+        climbGroundY = FeetWorld().y;
+        float footLift = 0.17f;
+        if (leftFoot != null && rightFoot != null)
         {
-            if (topHit.collider == lowHit.collider)
-                obstacleTop = topHit.point.y;
+            float boneY = Mathf.Min(leftFoot.position.y, rightFoot.position.y);
+            float lift = boneY - climbGroundY;
+            if (lift > 0.02f && lift < 0.45f)
+                footLift = lift;
         }
+        climbMountFeet = ledge.TopFeet + Vector3.up * footLift;
 
-        float obstacleHeight = obstacleTop - feet.y;
-        if (obstacleHeight < minH || obstacleHeight > maxH)
-            return false;
-
-        Vector3 into = forward;
-        if (lowHit.normal.y < 0.75f)
+        Vector3 end = TransformFromFeet(ledge.TopFeet);
+        if (fromWaist)
         {
-            Vector3 face = -lowHit.normal;
-            face.y = 0f;
-            if (face.sqrMagnitude > 0.0001f)
-                into = face.normalized;
-        }
-
-        bool foundLanding = false;
-        Vector3 groundPoint = default;
-
-        // Prefer a crouch on top of the obstacle, just past the lip the hands hold.
-        Vector3 topProbe = lowHit.point + into * (cc.radius + 0.35f);
-        topProbe.y = obstacleTop + 1.25f;
-        if (Physics.Raycast(topProbe, Vector3.down, out RaycastHit topStand, 2.2f, mask, QueryTriggerInteraction.Ignore)
-            && topStand.collider == lowHit.collider
-            && topStand.point.y > obstacleTop - 0.12f
-            && topStand.point.y < obstacleTop + 0.12f)
-        {
-            Vector3 further = topProbe + into * 0.22f;
-            if (Physics.Raycast(further, Vector3.down, out RaycastHit topStandFar, 2.2f, mask, QueryTriggerInteraction.Ignore)
-                && topStandFar.collider == lowHit.collider
-                && topStandFar.point.y > obstacleTop - 0.15f)
-            {
-                groundPoint = topStand.point;
-                foundLanding = true;
-            }
-        }
-
-        for (float distance = 0.3f; distance <= 2f && !foundLanding; distance += 0.2f)
-        {
-            Vector3 origin = lowHit.point + forward * distance;
-            origin.y = obstacleTop + 1.5f;
-            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit groundHit, obstacleHeight + 3f, mask, QueryTriggerInteraction.Ignore))
-                continue;
-            if (FindStairsRoot(groundHit.collider.transform) != null)
-                continue;
-
-            bool farGround = groundHit.point.y < obstacleTop - 0.25f
-                && groundHit.point.y <= feet.y + 0.35f
-                && groundHit.point.y >= feet.y - 0.35f;
-            if (!farGround)
-                continue;
-
-            groundPoint = groundHit.point + forward * (cc.radius + 0.08f);
-            foundLanding = true;
-            break;
-        }
-
-        if (!foundLanding)
-            return false;
-
-        // Fingertips rest on the near top edge, a few centimetres in from the face.
-        lip = lowHit.point + into * 0.05f;
-        lip.y = obstacleTop;
-        Vector3 lipProbe = lip + Vector3.up * 0.4f;
-        if (Physics.Raycast(lipProbe, Vector3.down, out RaycastHit lipHit, 0.8f, mask, QueryTriggerInteraction.Ignore)
-            && lipHit.point.y >= obstacleTop - 0.2f)
-        {
-            lip = lipHit.point + into * 0.02f;
-            lip.y = lipHit.point.y + 0.02f;
-            obstacleTop = lipHit.point.y;
+            BeginTraversal(TraversalKind.Climb, end, ledge.Height + 0.15f, ClimbStateName, climbHash);
+            Debug.Log("[PlayerController] Climb over performed.");
         }
         else
         {
-            lip.y = obstacleTop + 0.02f;
+            BeginTraversal(TraversalKind.HangUp, end, ledge.Height + 0.15f, HangStateName, 0);
+            Debug.Log("[PlayerController] Ledge grab performed.");
         }
-
-        landingFeet = groundPoint;
-        landing = TransformFromFeet(groundPoint);
-        clearance = obstacleHeight + 0.15f;
-        return true;
     }
 
-    private bool TryGetJumpDown(out Vector3 landing)
+    private bool TryGetLedge(out Ledge ledge, out LedgeType type)
     {
-        landing = default;
+        ledge = default;
+        type = LedgeType.Vault;
+
         var cc = Controller;
         Vector3 feet = FeetWorld();
-        Vector3 forward = FlatForward();
-        int mask = ProbeMask;
-
-        Vector3 chest = feet + Vector3.up * (cc.height * 0.45f);
-        if (Physics.Raycast(chest, forward, jumpDownProbeForward, mask, QueryTriggerInteraction.Ignore))
+        if (!LedgeMarker.TryFindNearest(feet, FlatForward(), ledgeReach, cc.height * climbMaxHeightFactor, ledgeMaxAngle, out LedgeMarker.Grab grab))
             return false;
 
-        Vector3 near = feet + forward * (cc.radius + 0.2f) + Vector3.up * 0.12f;
-        if (Physics.Raycast(near, Vector3.down, out RaycastHit nearHit, jumpDownMinDrop + 0.15f, mask, QueryTriggerInteraction.Ignore))
-        {
-            if (feet.y - nearHit.point.y < jumpDownMinDrop * 0.5f)
-                return false;
-        }
+        type = grab.Type;
+        Vector3 into = grab.Into;
+        ledge.Lip = grab.Lip + into * 0.05f;
+        ledge.Top = grab.Lip.y;
+        ledge.Height = grab.Lip.y - feet.y;
+        ledge.Into = into;
 
-        Vector3 origin = feet + forward * jumpDownProbeForward + Vector3.up * 0.25f;
-        if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, jumpDownMaxDrop + 0.75f, mask, QueryTriggerInteraction.Ignore))
-            return false;
+        // Crouch spot on top, just past the lip, but not off the far side of a thin top.
+        Vector3 topFeet = grab.Lip + into * Mathf.Min(cc.radius + 0.35f, grab.Depth * 0.5f);
+        ledge.TopFeet = GroundBelow(topFeet + Vector3.up * 0.3f, 0.6f, topFeet);
 
-        float drop = feet.y - hit.point.y;
-        if (drop < jumpDownMinDrop || drop > jumpDownMaxDrop)
-            return false;
-        if (FindStairsRoot(hit.collider.transform) != null)
-            return false;
-
-        landing = TransformFromFeet(hit.point + forward * 0.12f);
+        // The vault clip comes down about 1.2 m past the hands; the hard landing about 1 m past the top.
+        float farDistance = type == LedgeType.ClimbOver ? grab.Depth * 0.5f + 1f : 1.2f;
+        Vector3 farFeet = grab.Lip + into * Mathf.Max(grab.Depth + cc.radius + 0.1f, farDistance);
+        farFeet.y = feet.y;
+        ledge.FarFeet = GroundBelow(farFeet + Vector3.up * (ledge.Height + 0.3f), ledge.Height + 2f, farFeet);
         return true;
     }
 
-    private void BeginTraversal(TraversalKind kind, Vector3 endPosition, float clearance, string clipName, int trigger)
+    private Vector3 GroundBelow(Vector3 origin, float distance, Vector3 fallback)
+    {
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, distance, ProbeMask, QueryTriggerInteraction.Ignore))
+            return hit.point;
+        return fallback;
+    }
+
+    // trigger 0 cross-fades straight into the clipName state, starting startNormalized into it.
+    private void BeginTraversal(TraversalKind kind, Vector3 endPosition, float clearance, string clipName, int trigger, float startNormalized = 0f)
     {
         traversal = kind;
         traversalStart = transform.position;
         traversalEnd = endPosition;
         traversalClearance = clearance;
         traversalStartTime = Time.time;
-        traversalDuration = ClipDuration(clipName, kind == TraversalKind.Climb ? 1.13f : 3.07f);
+        traversalDuration = ClipDuration(clipName, 1.13f);
         traversalFacing = traversalEnd - traversalStart;
         traversalFacing.y = 0f;
         if (traversalFacing.sqrMagnitude < 0.0001f)
@@ -918,10 +891,11 @@ public class PlayerController : MonoBehaviour
             animator.applyRootMotion = false;
             animator.SetBool(onStairsHash, false);
             animator.SetFloat(stairDirectionHash, 0f);
-            animator.ResetTrigger(jumpHash);
             animator.ResetTrigger(climbHash);
-            animator.ResetTrigger(jumpDownHash);
-            animator.SetTrigger(trigger);
+            if (trigger != 0)
+                animator.SetTrigger(trigger);
+            else
+                animator.CrossFadeInFixedTime(clipName, 0.15f, 0, startNormalized * traversalDuration);
         }
     }
 
@@ -932,24 +906,10 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 1f - Mathf.Pow(0.05f, Time.deltaTime));
     }
 
-    private void UpdateTraversal()
-    {
-        float duration = Mathf.Max(0.2f, traversalDuration);
-        float t = Mathf.Clamp01((Time.time - traversalStartTime) / duration);
-        transform.position = EvaluateJumpDown(t);
-        UpdateClimbFacing();
-
-        bool animDone = IsActionFinished();
-        if (t >= 1f || animDone)
-            FinishTraversal();
-    }
-
     private void FinishTraversal()
     {
-        if (traversal == TraversalKind.Climb)
+        if (traversal == TraversalKind.Climb || traversal == TraversalKind.HangUp)
             AlignClimbToLanding();
-        else
-            transform.position = traversalEnd;
         if (!Controller.enabled)
             Controller.enabled = true;
 
@@ -969,7 +929,7 @@ public class PlayerController : MonoBehaviour
         planarSpeedVelocity = 0f;
     }
 
-    private bool TryGetClimbNormalized(out float normalized)
+    private bool TryGetStateNormalized(string stateName, out float normalized)
     {
         normalized = 0f;
         if (animator == null) return false;
@@ -977,7 +937,7 @@ public class PlayerController : MonoBehaviour
         if (animator.IsInTransition(0))
         {
             AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(0);
-            if (next.IsTag("Action") && next.IsName("Climb Over"))
+            if (next.IsTag("Action") && next.IsName(stateName))
             {
                 normalized = next.normalizedTime;
                 return true;
@@ -985,7 +945,7 @@ public class PlayerController : MonoBehaviour
         }
 
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-        if (info.IsTag("Action") && info.IsName("Climb Over"))
+        if (info.IsTag("Action") && info.IsName(stateName))
         {
             normalized = info.normalizedTime;
             return true;
@@ -1002,24 +962,13 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (!TryGetClimbNormalized(out float poseT))
+        if (!TryGetStateNormalized(ClimbStateName, out float poseT))
             return;
 
         poseT = Mathf.Repeat(poseT, 1f);
-        float poseWeight = animator != null && animator.IsInTransition(0)
-            ? animator.GetAnimatorTransitionInfo(0).normalizedTime
-            : 1f;
-
-        Transform gripL = leftFingertip != null ? leftFingertip : leftHand;
-        Transform gripR = rightFingertip != null ? rightFingertip : rightHand;
-        Vector3 gripMid = (gripL.position + gripR.position) * 0.5f;
-        Vector3 gripOffset = gripMid - transform.position;
-        Vector3 held = climbLip - gripOffset;
-
-        float lowestFoot = Mathf.Min(leftFoot.position.y, rightFoot.position.y) - transform.position.y;
-        float minHeldY = climbGroundY + 0.02f - lowestFoot;
-        if (held.y < minHeldY)
-            held.y = minHeldY;
+        float poseWeight = PoseWeight();
+        float lowestFoot = LowestFootOffset();
+        Vector3 held = HeldOnLip(lowestFoot);
 
         // The braced hang keeps the fingertips on the lip while the body pulls up.
         // After that, the clip climbs over the edge and the feet settle on the landing.
@@ -1037,6 +986,150 @@ public class PlayerController : MonoBehaviour
         }
 
         transform.position = Vector3.Lerp(transform.position, target, poseWeight);
+    }
+
+    private bool HasWarpBones => leftHand != null && rightHand != null && leftFoot != null && rightFoot != null;
+
+    // Blends the warp in over the cross-fade, so the body does not jump on the first frame.
+    private float PoseWeight()
+    {
+        return animator != null && animator.IsInTransition(0)
+            ? animator.GetAnimatorTransitionInfo(0).normalizedTime
+            : 1f;
+    }
+
+    private float LowestFootOffset()
+    {
+        return Mathf.Min(leftFoot.position.y, rightFoot.position.y) - transform.position.y;
+    }
+
+    // Transform position that puts the fingertips on the lip, without pushing the feet into the ground.
+    private Vector3 HeldOnLip(float lowestFoot)
+    {
+        Transform gripL = leftFingertip != null ? leftFingertip : leftHand;
+        Transform gripR = rightFingertip != null ? rightFingertip : rightHand;
+        Vector3 gripMid = (gripL.position + gripR.position) * 0.5f;
+        Vector3 held = climbLip - (gripMid - transform.position);
+
+        float minHeldY = climbGroundY + 0.02f - lowestFoot;
+        if (held.y < minHeldY)
+            held.y = minHeldY;
+        return held;
+    }
+
+    private void ApplyVaultWarp()
+    {
+        float elapsed = Time.time - traversalStartTime;
+        if (!HasWarpBones || !TryGetStateNormalized(VaultStateName, out float poseT))
+        {
+            if (elapsed > 0.3f)
+                FinishTraversal();
+            return;
+        }
+
+        if (poseT >= VaultExitTime || elapsed > traversalDuration)
+        {
+            FinishTraversal();
+            return;
+        }
+
+        float poseWeight = PoseWeight();
+        Vector3 target;
+        if (poseT < VaultReleaseTime)
+        {
+            // Run in to the obstacle and keep the planted hands on its top edge.
+            Vector3 held = HeldOnLip(LowestFootOffset());
+            target = Vector3.Lerp(traversalStart, held, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(VaultEntryTime, VaultPlantTime, poseT)));
+        }
+        else
+        {
+            // Off the hands: carry the body over to the landing spot the probe checked is clear.
+            if (!vaultReleased)
+            {
+                vaultReleased = true;
+                vaultCarry = transform.position;
+            }
+
+            float land = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(VaultReleaseTime, VaultLandTime, poseT));
+            target = Vector3.Lerp(vaultCarry, traversalEnd, land);
+            target.y = Mathf.Lerp(vaultCarry.y, vaultLandY, land);
+        }
+
+        transform.position = Vector3.Lerp(transform.position, target, poseWeight);
+    }
+
+    private void ApplyHangWarp()
+    {
+        float elapsed = Time.time - traversalStartTime;
+
+        // "Hang Up" hands over to "Climb Over", which pulls the body onto the ledge.
+        if (TryGetStateNormalized(ClimbStateName, out _))
+        {
+            traversal = TraversalKind.Climb;
+            traversalStartTime = Time.time;
+            traversalDuration = ClipDuration(ClimbStateName, 1.13f);
+            ApplyClimbWarp(0f);
+            return;
+        }
+
+        if (!HasWarpBones || elapsed > traversalDuration + 0.6f)
+        {
+            FinishTraversal();
+            return;
+        }
+
+        if (!TryGetStateNormalized(HangStateName, out float poseT))
+            return;
+
+        float reach = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(HangReachStart, HangReachEnd, poseT));
+        Vector3 target = Vector3.Lerp(traversalStart, HeldOnLip(LowestFootOffset()), reach);
+        transform.position = Vector3.Lerp(transform.position, target, PoseWeight());
+    }
+
+    // Climb Over: from the crouch on top, drop off the far side.
+    private void BeginDrop()
+    {
+        climbOverPending = false;
+        traversal = TraversalKind.Drop;
+        traversalStart = transform.position;
+        traversalEnd = TransformFromFeet(dropFarFeet);
+        traversalStartTime = Time.time;
+        traversalDuration = ClipDuration(LandStateName, 2.5f);
+        if (animator != null)
+            animator.CrossFadeInFixedTime(LandStateName, 0.15f, 0, 0f);
+        Debug.Log("[PlayerController] Climb over drop performed.");
+    }
+
+    private void ApplyDropWarp()
+    {
+        float elapsed = Time.time - traversalStartTime;
+        if (!HasWarpBones || !TryGetStateNormalized(LandStateName, out float poseT))
+        {
+            if (elapsed > 0.4f)
+                FinishTraversal();
+            return;
+        }
+
+        if (poseT >= DropExitTime || elapsed > traversalDuration + 0.3f)
+        {
+            FinishTraversal();
+            return;
+        }
+
+        float fall = Mathf.InverseLerp(0f, DropLandTime, poseT);
+        Vector3 target = Vector3.Lerp(traversalStart, traversalEnd, Mathf.SmoothStep(0f, 1f, fall));
+        if (fall < 1f)
+        {
+            // The feet come down from the fence top to the far ground, speeding up like a fall.
+            float feetY = Mathf.Lerp(climbObstacleTop, dropFarFeet.y, fall * fall);
+            target.y = feetY + 0.02f - LowestFootOffset();
+        }
+        else
+        {
+            target.y = traversalEnd.y;
+        }
+
+        transform.position = Vector3.Lerp(transform.position, target, PoseWeight());
     }
 
     private float StairMatchedSpeed()
@@ -1546,33 +1639,6 @@ public class PlayerController : MonoBehaviour
         Vector3 pos = Vector3.Lerp(traversalStart, traversalEnd, cross);
         pos.y = Mathf.Lerp(traversalStart.y, traversalEnd.y, cross) + height;
         return pos;
-    }
-
-    private Vector3 EvaluateJumpDown(float t)
-    {
-        float horiz = Mathf.SmoothStep(0.2f, 0.9f, t);
-        float vert = Mathf.SmoothStep(0.35f, 0.9f, t);
-        Vector3 pos = Vector3.Lerp(traversalStart, traversalEnd, horiz);
-        pos.y = Mathf.Lerp(traversalStart.y, traversalEnd.y, vert);
-        float hop = Mathf.Sin(Mathf.Clamp01(t / 0.35f) * Mathf.PI) * traversalClearance;
-        pos.y += hop * (1f - vert);
-        return pos;
-    }
-
-    private bool IsActionFinished()
-    {
-        if (animator == null) return false;
-        if (Time.time - traversalStartTime < 0.2f) return false;
-
-        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-        if (animator.IsInTransition(0))
-        {
-            AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(0);
-            if (next.IsTag("Action")) return false;
-            if (info.IsTag("Action")) return false;
-        }
-
-        return info.IsTag("Action") && info.normalizedTime >= 0.92f;
     }
 
     private float ClipDuration(string clipName, float fallback)

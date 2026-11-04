@@ -8,6 +8,9 @@ public class ThrownLightBall : MonoBehaviour
 {
     private const float PickupDelay = 0.6f;
     private const float LostHeight = -100f;
+    // The held lamp only lights the player's surroundings; a thrown ball has to light a room.
+    private const float ThrownIntensity = 12f;
+    private const float ThrownRange = 14f;
 
     private int returnSlot = -1;
     private float pickupTime;
@@ -17,6 +20,13 @@ public class ThrownLightBall : MonoBehaviour
     {
         returnSlot = slot;
         pickupTime = Time.time + PickupDelay;
+
+        Light[] lights = GetComponentsInChildren<Light>(true);
+        for (int i = 0; i < lights.Length; i++)
+        {
+            lights[i].intensity = ThrownIntensity;
+            lights[i].range = ThrownRange;
+        }
     }
 
     private void Update()

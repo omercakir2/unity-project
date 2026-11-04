@@ -104,6 +104,13 @@ public class HeldItemVisual : MonoBehaviour
         impulse.GenerateImpulse(kick * 0.15f);
     }
 
+    /// <summary>One-off camera jolt through the recoil impulse source.</summary>
+    public void ShakeCamera(float strength)
+    {
+        if (impulse != null)
+            impulse.GenerateImpulse(Random.onUnitSphere * strength);
+    }
+
     public bool TryGetMuzzle(out Vector3 origin, out Vector3 direction)
     {
         origin = transform.position + Vector3.up * 1.4f;

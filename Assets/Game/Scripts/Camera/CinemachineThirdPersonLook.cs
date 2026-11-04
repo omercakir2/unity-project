@@ -17,6 +17,8 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     [SerializeField] private float movingYawSmooth = 0.08f;
     [Tooltip("Real seconds for the pistol camera to slide to the other shoulder.")]
     [SerializeField] private float shoulderSwapTime = 0.22f;
+    [Tooltip("Seconds for the camera pivot to follow the body up or down during a vault or climb.")]
+    [SerializeField] private float bodyFollowTime = 0.12f;
 
     public InputAxis HorizontalLook = new InputAxis
     {
@@ -64,6 +66,12 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     private float bodyYawVelocity;
     private bool aimSynced;
     private bool wasOnStairs;
+    private Vector3 pivotRest;
+    private Transform hips;
+    private float restHipsHeight;
+    private bool restHipsCaptured;
+    private float bodyLift;
+    private float bodyLiftVelocity;
 
     void IInputAxisOwner.GetInputAxes(List<IInputAxisOwner.AxisDescriptor> axes)
     {
@@ -84,6 +92,7 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
     private void Awake()
     {
         player = GetComponentInParent<PlayerController>();
+        pivotRest = transform.localPosition;
         DisableRecentering(ref HorizontalLook);
         DisableRecentering(ref VerticalLook);
 
@@ -130,9 +139,42 @@ public class CinemachineThirdPersonLook : MonoBehaviour, IInputAxisOwner
         float pitch = Mathf.Clamp(VerticalLook.Value, VerticalLook.Range.x, VerticalLook.Range.y);
         VerticalLook.Value = pitch;
         ApplyLook(pitch, HorizontalLook.Value);
+        FollowBodyHeight();
         UpdatePistolCamera();
         UpdateShoulderSide();
         UpdateFieldOfView();
+    }
+
+    // Vault and climb clips move the body far above or below the player transform.
+    // The pivot rises and falls with the hips then, so the camera does not end up inside the body.
+    private void FollowBodyHeight()
+    {
+        if (player == null)
+            return;
+        if (hips == null)
+        {
+            Animator animator = player.GetComponentInChildren<Animator>();
+            if (animator == null || !animator.isHuman)
+                return;
+            hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            if (hips == null)
+                return;
+        }
+
+        float hipsHeight = player.transform.InverseTransformPoint(hips.position).y;
+        float target = 0f;
+        if (!player.IsTraversing)
+        {
+            restHipsHeight = restHipsCaptured ? Mathf.Lerp(restHipsHeight, hipsHeight, 1f - Mathf.Exp(-2f * Time.deltaTime)) : hipsHeight;
+            restHipsCaptured = true;
+        }
+        else if (restHipsCaptured)
+        {
+            target = hipsHeight - restHipsHeight;
+        }
+
+        bodyLift = Mathf.SmoothDamp(bodyLift, target, ref bodyLiftVelocity, bodyFollowTime);
+        transform.localPosition = pivotRest + Vector3.up * bodyLift;
     }
 
     // Mouse yaw leads the body by a few degrees. The leftover sits on this rig

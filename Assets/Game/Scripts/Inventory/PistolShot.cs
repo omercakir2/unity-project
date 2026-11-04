@@ -13,15 +13,34 @@ public class PistolShot : MonoBehaviour
     [SerializeField] private int magazineSize = 7;
     [SerializeField] private int reserveAmmo = 0;
 
+    [Header("Spread (degrees, cone half-angle)")]
+    [SerializeField] private float idleSpread = 0.5f;
+    [SerializeField] private float walkSpread = 2f;
+    [SerializeField] private float sprintSpread = 5f;
+    [SerializeField] private float airSpread = 7f;
+    [SerializeField] private float shotSpreadKick = 1.5f;
+    [SerializeField] private float maxShotSpread = 4f;
+    [SerializeField] private float spreadSharpness = 10f;
+    [SerializeField] private float shotSpreadRecovery = 6f;
+
     private int ammoInMagazine = -1;
+    private float moveSpread;
+    private float shotSpread;
+
+    /// <summary>Current cone half-angle in degrees. The crosshair opens to match it.</summary>
+    public float CurrentSpread => moveSpread + shotSpread;
 
     public int AmmoInMagazine => ammoInMagazine < 0 ? magazineSize : ammoInMagazine;
     public int ReserveAmmo => reserveAmmo;
     public event System.Action AmmoChanged;
 
+    /// <summary>Raised on every zombie hit. The argument is true when the hit killed it.</summary>
+    public event System.Action<bool> ZombieHit;
+
     private HeldItemVisual held;
     private PlayerInventory inventory;
     private PlayerController player;
+    private CharacterController body;
     private InputAction attack;
     private float nextShotTime;
     private float slideKick;
@@ -43,6 +62,8 @@ public class PistolShot : MonoBehaviour
         held = GetComponent<HeldItemVisual>();
         inventory = GetComponent<PlayerInventory>();
         player = GetComponent<PlayerController>();
+        body = GetComponent<CharacterController>();
+        moveSpread = idleSpread;
         if (ammoInMagazine < 0)
             ammoInMagazine = magazineSize;
         settings = AmbienceSettings.LoadOrDefault();
@@ -70,6 +91,7 @@ public class PistolShot : MonoBehaviour
             return;
 
         EaseSlide();
+        UpdateSpread();
         if (!AttackPressed())
             return;
 
@@ -97,10 +119,11 @@ public class PistolShot : MonoBehaviour
             return false;
         if (player != null && player.IsTraversing)
             return false;
-        if (Time.time < nextShotTime)
+        // Real time: in the zombie slow motion a scaled cooldown stretches to over a second.
+        if (Time.unscaledTime < nextShotTime)
             return false;
 
-        nextShotTime = Time.time + cooldown;
+        nextShotTime = Time.unscaledTime + cooldown;
         if (AmmoInMagazine <= 0)
         {
             if (audioSource != null && dryClip != null)
@@ -115,7 +138,8 @@ public class PistolShot : MonoBehaviour
         Vector3 shotDirection = transform.forward;
         if (!held.TryGetMuzzle(out muzzle, out shotDirection) || shotDirection.sqrMagnitude < 0.0001f)
             shotDirection = transform.forward;
-        shotDirection.Normalize();
+        shotDirection = Scatter(shotDirection.normalized, CurrentSpread);
+        shotSpread = Mathf.Min(maxShotSpread, shotSpread + shotSpreadKick);
 
         Vector3 end = muzzle + shotDirection * range;
         RaycastHit[] hits = Physics.RaycastAll(muzzle, shotDirection, range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
@@ -128,7 +152,7 @@ public class PistolShot : MonoBehaviour
             end = hits[i].point;
             ZombieController zombie = hitTransform.GetComponentInParent<ZombieController>();
             if (zombie != null)
-                zombie.Kill();
+                ZombieHit?.Invoke(zombie.TakeHit(end, shotDirection));
             break;
         }
 
@@ -144,6 +168,41 @@ public class PistolShot : MonoBehaviour
             audioSource.PlayOneShot(tailClip, tailVolume);
 
         return true;
+    }
+
+    private void UpdateSpread()
+    {
+        float target = idleSpread;
+        if (player != null && body != null && body.enabled)
+        {
+            Vector3 planar = body.velocity;
+            planar.y = 0f;
+            float speed = planar.magnitude;
+            float walk = Mathf.Max(0.01f, player.WalkSpeed);
+            float sprint = Mathf.Max(walk + 0.01f, player.SprintSpeed);
+            target = speed <= walk
+                ? Mathf.Lerp(idleSpread, walkSpread, speed / walk)
+                : Mathf.Lerp(walkSpread, sprintSpread, (speed - walk) / (sprint - walk));
+            if (!player.IsGrounded)
+                target = Mathf.Max(target, airSpread);
+        }
+        else if (player != null && player.IsTraversing)
+        {
+            target = airSpread;
+        }
+
+        moveSpread = Mathf.Lerp(moveSpread, target, 1f - Mathf.Exp(-spreadSharpness * Time.deltaTime));
+        shotSpread = Mathf.MoveTowards(shotSpread, 0f, shotSpreadRecovery * Time.deltaTime);
+    }
+
+    // Uniform pick inside the cone, so the hits fill the crosshair gap evenly.
+    private static Vector3 Scatter(Vector3 direction, float halfAngle)
+    {
+        if (halfAngle <= 0.001f)
+            return direction;
+        Vector2 offset = Random.insideUnitCircle * Mathf.Tan(halfAngle * Mathf.Deg2Rad);
+        Quaternion basis = Quaternion.LookRotation(direction);
+        return (direction + basis * new Vector3(offset.x, offset.y, 0f)).normalized;
     }
 
     private void KickSlide()

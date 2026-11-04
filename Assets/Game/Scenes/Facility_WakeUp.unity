@@ -2750,6 +2750,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1090625220}
   - component: {fileID: 1090625219}
+  - component: {fileID: 1090625221}
   m_Layer: 0
   m_Name: Wake Up Cinematic
   m_TagString: Untagged
@@ -2809,6 +2810,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1090625221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090625218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73f47e65ac77f4dc18df4a85af28a139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WakeUpMemories
+  cuts:
+  - image: {fileID: 2800000, guid: 847560a1f9fc44988ae9e2a192e2ebe9, type: 3}
+    video: {fileID: 0}
+    startTime: 2.6
+    duration: 1.4
+    videoOffset: 0
+  - image: {fileID: 0}
+    video: {fileID: 32900000, guid: 2f8cad3c66f454e94a64162a6bc80269, type: 3}
+    startTime: 5.6
+    duration: 1.2
+    videoOffset: 0
+  - image: {fileID: 0}
+    video: {fileID: 32900000, guid: 1a8a795126dda44fda59d076385be207, type: 3}
+    startTime: 8.4
+    duration: 1.3
+    videoOffset: 0
+  - image: {fileID: 0}
+    video: {fileID: 32900000, guid: 2f8cad3c66f454e94a64162a6bc80269, type: 3}
+    startTime: 13
+    duration: 1
+    videoOffset: 2.5
+  - image: {fileID: 0}
+    video: {fileID: 32900000, guid: 1a8a795126dda44fda59d076385be207, type: 3}
+    startTime: 15.2
+    duration: 1.1
+    videoOffset: 2.5
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashInTime: 0.08
+  flashOutTime: 0.18
+  pushIn: 1.06
+  barTop: 0.096
+  barBottom: 0.053
 --- !u!1001 &1091461080
 PrefabInstance:
   m_ObjectHideFlags: 0
